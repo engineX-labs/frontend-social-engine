@@ -3,6 +3,22 @@ import type { CalendarioMes, Formato, Idea, Publicada } from '@/domain/types'
 import { aUtcDesdeBA, claveMes, diaLargo, partesBA } from '@/lib/fecha'
 import { portadaDemo } from './portadas'
 
+/**
+ * Los datos de ejemplo se escribieron con "hoy" = sábado 14/11/2026. Para que el demo siempre
+ * abra con publicaciones recientes e ideas próximas, se corren semanas enteras hasta la fecha
+ * actual (así cada publicación conserva su día de la semana y su hora). En tests no se corren.
+ */
+const SEMANA_MS = 7 * 24 * 60 * 60 * 1000
+const HOY_BASE = Date.UTC(2026, 10, 14, 15)
+export function semanasDeDesplazo(ahora: number, fijo: boolean): number {
+  return fijo ? 0 : Math.round((ahora - HOY_BASE) / SEMANA_MS)
+}
+const DESPLAZO_MS = semanasDeDesplazo(Date.now(), import.meta.env.MODE === 'test') * SEMANA_MS
+
+function fechaDemo(mes: number, dia: number, h: number, min: number): string {
+  return new Date(Date.parse(aUtcDesdeBA(2026, mes, dia, h, min)) + DESPLAZO_MS).toISOString()
+}
+
 /** Datos de ejemplo de "Casa Álamo" (Instagram), tomados del prototipo. Fechas en hora de Buenos Aires. */
 // [mes, día, hora, minuto, formato, alcance, interacciones, copy]
 const RAW: [number, number, number, number, Formato, number, number, string][] = [
@@ -40,7 +56,7 @@ const RAW: [number, number, number, number, Formato, number, number, string][] =
   [10, 22, 12, 30, 'Reel', 1280, 96, 'Probando la camisa blanca de lino en tres versiones.'],
   [10, 24, 19, 20, 'Foto', 1190, 71, 'Sábado de tejidos livianos. Ya disponibles en tres colores.'],
   [11, 10, 18, 20, 'Foto', 1100, 66, 'Martes de campera. ¿Negra o camel?'],
-  [10, 31, 11, 30, 'Carrusel', 1020, 70, 'Looks de fin de mes para estrenar en noviembre.'],
+  [10, 31, 11, 30, 'Carrusel', 1020, 70, 'Looks de fin de mes para estrenar la semana que viene.'],
   [10, 15, 13, 10, 'Foto', 960, 52, 'Jueves de sacos livianos.'],
   [10, 17, 10, 40, 'Reel', 940, 58, 'Así llega la mercadería nueva al local.'],
   [10, 20, 9, 50, 'Foto', 620, 24, 'Nuevo stock de remeras básicas.'],
@@ -51,7 +67,7 @@ const PUBLICADAS_BASE: Publicada[] = RAW.map((r, i) => ({
   tipo: 'publicada' as const,
   id: `pub-${i + 1}`,
   red: 'instagram' as const,
-  fecha: aUtcDesdeBA(2026, r[0], r[1], r[2], r[3]),
+  fecha: fechaDemo(r[0], r[1], r[2], r[3]),
   formato: r[4],
   copy: r[7],
   portadaUrl: portadaDemo(i, r[4]),
@@ -131,7 +147,7 @@ export const IDEAS: Idea[] = IDEAS_RAW.map((r, i) => ({
   tipo: 'idea' as const,
   id: `idea-${i + 1}`,
   red: 'instagram' as const,
-  fecha: aUtcDesdeBA(2026, 11, r[0], r[1], r[2]),
+  fecha: fechaDemo(11, r[0], r[1], r[2]),
   formato: r[3],
   ideaPortada: r[4],
   copyPropuestas: COPY[r[3]],

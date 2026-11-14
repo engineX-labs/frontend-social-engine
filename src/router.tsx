@@ -1,8 +1,12 @@
-import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+} from '@tanstack/react-router'
 import { Layout } from '@/app/Layout'
 import { validarCalendarioSearch, validarChatSearch } from '@/app/search'
 import { CalendarioView } from '@/features/calendario/CalendarioView'
-import { ChatPage } from '@/features/chat/ChatPage'
 import { DetallePanel } from '@/features/detalle/DetallePanel'
 
 const rootRoute = createRootRoute({ component: Layout })
@@ -24,7 +28,8 @@ const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/chat',
   validateSearch: validarChatSearch,
-  component: ChatPage,
+  // El chat se descarga al entrar (o al pasar el cursor por el enlace): la primera carga pesa menos.
+  component: lazyRouteComponent(() => import('@/features/chat/ChatPage'), 'ChatPage'),
 })
 
 const routeTree = rootRoute.addChildren([calendarioRoute, chatRoute])
