@@ -1,5 +1,6 @@
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2, RotateCw } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Boton } from './ui/Boton'
 
 export function EstadoCarga({ texto = 'Cargando…' }: { texto?: string }) {
   return (
@@ -20,18 +21,15 @@ export function EstadoError({
   return (
     <div
       role="alert"
-      className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-raised p-4 text-sm"
+      className="flex animate-aparecer flex-wrap items-center gap-3 rounded-lg border border-line bg-raised p-4 text-sm"
     >
-      <AlertCircle className="size-4 text-danger" aria-hidden="true" />
-      <span className="flex-1">{mensaje}</span>
+      <AlertCircle className="size-5 shrink-0 text-danger" aria-hidden="true" />
+      <span className="min-w-0 flex-1 basis-48">{mensaje}</span>
       {onReintentar && (
-        <button
-          type="button"
-          onClick={onReintentar}
-          className="font-semibold text-accent-ink underline underline-offset-4"
-        >
+        <Boton tamano="sm" onClick={onReintentar}>
+          <RotateCw className="size-3.5" aria-hidden="true" />
           Reintentar
-        </button>
+        </Boton>
       )}
     </div>
   )
