@@ -1,6 +1,6 @@
 # Plan: Frontend de social engine (calendario MVP)
 
-Estado: aprobado (v2, aprobado por el usuario en el chat)
+Estado: aprobado. Fases 1-7 construidas en `feature/integracion-fases` (pendiente /entregar)
 
 ## Contexto
 - Base: `Calendario social engine.html` (prototipo vanilla JS, 1 archivo) y `index.html` / `social-engine-pizarron.html` (demo anterior del pizarrón, idénticos entre sí, desplegados en Vercel).

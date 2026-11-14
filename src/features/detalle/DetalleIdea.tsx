@@ -53,13 +53,24 @@ export function DetalleIdea({ idea }: { idea: Idea }) {
             <Sparkles className="size-4" aria-hidden="true" />
             Copy propuesto
           </h3>
-          <span className="font-mono text-xs text-muted">
-            {i + 1} de {total}
-          </span>
+          {total > 0 && (
+            <span className="font-mono text-xs text-muted">
+              {i + 1} de {total}
+            </span>
+          )}
         </div>
-        <p className="whitespace-pre-line text-[15px] leading-relaxed">{copy}</p>
+        {total === 0 ? (
+          <p className="text-sm text-muted">Fidel todavía no tiene un copy para esta idea.</p>
+        ) : (
+          <p className="whitespace-pre-line text-[15px] leading-relaxed">{copy}</p>
+        )}
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={copiar} className={boton}>
+          <button
+            type="button"
+            onClick={copiar}
+            disabled={total === 0}
+            className={`${boton} disabled:opacity-50`}
+          >
             {copiado ? (
               <Check className="size-4 text-success" aria-hidden="true" />
             ) : (
@@ -88,8 +99,8 @@ export function DetalleIdea({ idea }: { idea: Idea }) {
           />
         </summary>
         <ul className="list-disc space-y-2 px-4 pb-4 pl-8 text-sm leading-relaxed">
-          {idea.porQue.map((p) => (
-            <li key={p}>{p}</li>
+          {idea.porQue.map((p, idx) => (
+            <li key={`${idx}-${p}`}>{p}</li>
           ))}
         </ul>
       </details>

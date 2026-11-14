@@ -3,12 +3,6 @@ import { claveMes, diaLargo, hora } from '@/lib/fecha'
 const NUM = new Intl.NumberFormat('es-AR')
 export const num = (n: number) => NUM.format(Math.round(n))
 
-export interface Comparacion {
-  razon: number
-  texto: string
-  clase: 'sube' | 'normal' | 'baja'
-}
-
 /** "2,3× tu mediana", "28% bajo tu mediana" o "en tu mediana". */
 export function textoRazon(razon: number): string {
   if (razon >= 1.3) return `${razon.toFixed(1).replace(/\.0$/, '').replace('.', ',')}× tu mediana`

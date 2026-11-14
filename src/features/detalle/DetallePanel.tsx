@@ -20,15 +20,30 @@ export function DetallePanel() {
   return item ? <Panel id={item} /> : null
 }
 
+/** Con scrim (<1100px) el panel es modal; en escritorio ancho convive con la grilla. */
+function useModal() {
+  const [modal, setModal] = useState(() => !window.matchMedia?.('(min-width: 1100px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia?.('(min-width: 1100px)')
+    if (!mq) return
+    const fn = () => setModal(!mq.matches)
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
+  }, [])
+  return modal
+}
+
 function Panel({ id }: { id: string }) {
   const navigate = ruta.useNavigate()
+  const modal = useModal()
   const cerrarRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   const [visible, setVisible] = useState(false)
   const itemQ = useItem(id)
   const item = itemQ.data
 
-  const mes = item ? mesDe(item.fecha) : ''
+  // Solo las publicadas se comparan contra la mediana del mes.
+  const mes = item?.tipo === 'publicada' ? mesDe(item.fecha) : ''
   const calQ = useQuery({ ...calendarioQuery(mes), enabled: Boolean(mes) })
 
   const cerrar = () =>
@@ -46,7 +61,7 @@ function Panel({ id }: { id: string }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') cerrarEstable.current()
       // Con scrim (<1100px) el panel es modal: Tab no sale de él.
-      if (e.key !== 'Tab' || window.matchMedia('(min-width: 1100px)').matches) return
+      if (e.key !== 'Tab' || window.matchMedia?.('(min-width: 1100px)').matches) return
       const panel = panelRef.current
       if (!panel) return
       const foco = Array.from(
@@ -92,13 +107,14 @@ function Panel({ id }: { id: string }) {
       <div
         aria-hidden="true"
         onClick={cerrar}
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-[220ms] min-[1100px]:hidden ${visible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-[220ms] motion-reduce:transition-none min-[1100px]:hidden ${visible ? 'opacity-100' : 'opacity-0'}`}
       />
       <aside
         ref={panelRef}
         role="dialog"
+        aria-modal={modal}
         aria-labelledby="detalle-titulo"
-        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-xl border-t border-line bg-surface shadow-card transition-transform duration-[220ms] ease-[var(--ease)] min-[820px]:inset-x-auto min-[820px]:inset-y-0 min-[820px]:right-0 min-[820px]:max-h-none min-[820px]:w-[min(440px,100%)] min-[820px]:rounded-none min-[820px]:border-l min-[820px]:border-t-0 min-[820px]:pt-[env(safe-area-inset-top)] ${visible ? 'translate-y-0 min-[820px]:translate-x-0' : 'translate-y-full min-[820px]:translate-x-full min-[820px]:translate-y-0'}`}
+        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-xl border-t border-line bg-surface shadow-card transition-transform duration-[220ms] ease-[var(--ease)] motion-reduce:transition-none min-[820px]:inset-x-auto min-[820px]:inset-y-0 min-[820px]:right-0 min-[820px]:max-h-none min-[820px]:w-[min(440px,100%)] min-[820px]:rounded-none min-[820px]:border-l min-[820px]:border-t-0 min-[820px]:pt-[env(safe-area-inset-top)] ${visible ? 'translate-y-0 min-[820px]:translate-x-0' : 'translate-y-full min-[820px]:translate-x-full min-[820px]:translate-y-0'}`}
       >
         <header className="flex items-start gap-3 border-b border-line p-4">
           <div className="min-w-0 flex-1 space-y-2">
@@ -125,7 +141,7 @@ function Panel({ id }: { id: string }) {
             <EstadoError
               mensaje={
                 itemQ.error instanceof ApiError && itemQ.error.status === 404
-                  ? 'No encontramos esta publicación. Puede que ya no exista.'
+                  ? 'No encontramos este elemento. Puede que ya no exista.'
                   : 'No pudimos cargar el detalle.'
               }
               onReintentar={() => void itemQ.refetch()}
@@ -137,7 +153,7 @@ function Panel({ id }: { id: string }) {
               resumen={calQ.data?.resumen ?? null}
             />
           ) : (
-            <DetalleIdea idea={item} />
+            <DetalleIdea key={item.id} idea={item} />
           )}
         </div>
 

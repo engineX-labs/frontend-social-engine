@@ -97,3 +97,28 @@ describe('DetallePanel', () => {
     expect(router.state.location.search).toEqual({ item: 'idea-2' })
   })
 })
+
+describe('DetallePanel: regresiones del review', () => {
+  it('idea sin propuestas no ofrece copiar un copy vacío', async () => {
+    const { server } = await import('@/mocks/server')
+    const { http, HttpResponse } = await import('msw')
+    server.use(
+      http.get('*/api/items/:id', () =>
+        HttpResponse.json({
+          tipo: 'idea',
+          id: 'idea-x',
+          red: 'instagram',
+          fecha: '2026-11-17T22:00:00.000Z',
+          formato: 'Foto',
+          ideaPortada: 'Luz natural',
+          copyPropuestas: [],
+          porQue: ['a', 'a'],
+        }),
+      ),
+    )
+    await montar('/?item=idea-x')
+    const d = within(await panel())
+    expect(await d.findByRole('button', { name: /Copiar copy/ })).toBeDisabled()
+    expect(d.queryByText(/de 0/)).not.toBeInTheDocument()
+  })
+})
