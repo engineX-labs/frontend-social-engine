@@ -9,11 +9,14 @@ let contador = 0
 const nuevoId = () => `m${++contador}`
 
 function aPeticion(historial: MensajeChat[]): { mensajes: MensajeApi[]; itemId?: string } {
-  const mensajes = historial
-    .filter(
-      (m) => m.texto && (m.rol === 'usuario' || m.estado === 'listo' || m.estado === 'detenido'),
-    )
-    .map((m) => ({ rol: m.rol, texto: m.texto }))
+  const mensajes: MensajeApi[] = []
+  for (const m of historial) {
+    if (!m.texto || (m.rol === 'fidel' && m.estado !== 'listo' && m.estado !== 'detenido')) continue
+    const previo = mensajes.at(-1)
+    // Si una respuesta falló, dos preguntas quedan seguidas: se juntan para que los roles alternen.
+    if (previo && previo.rol === m.rol) previo.texto += `\n\n${m.texto}`
+    else mensajes.push({ rol: m.rol, texto: m.texto })
+  }
   const ultimoUsuario = [...historial].reverse().find((m) => m.rol === 'usuario')
   return { mensajes, itemId: ultimoUsuario?.itemId }
 }
@@ -59,8 +62,11 @@ export function useChat({ itemId }: { itemId?: string } = {}) {
             error: e instanceof Error ? e.message : 'No pudimos hablar con Fidel.',
           })
       } finally {
-        if (refAbort.current === control) refAbort.current = null
-        setEstado('reposo')
+        // Si el usuario ya empezó otra pregunta tras detener, no pisar su estado.
+        if (refAbort.current === control || refAbort.current === null) {
+          refAbort.current = null
+          setEstado('reposo')
+        }
       }
     },
     [aplicar],
@@ -83,7 +89,11 @@ export function useChat({ itemId }: { itemId?: string } = {}) {
     [responder],
   )
 
-  const detener = useCallback(() => refAbort.current?.abort(), [])
+  const detener = useCallback(() => {
+    refAbort.current?.abort()
+    refAbort.current = null
+    setEstado('reposo')
+  }, [])
 
   /** Descarta la respuesta fallida y vuelve a preguntar lo mismo. */
   const reintentar = useCallback(() => {

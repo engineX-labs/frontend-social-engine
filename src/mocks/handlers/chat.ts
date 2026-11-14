@@ -15,7 +15,7 @@ const enlace = (texto: string, id: string, fecha: string) =>
 function respuestaDeItem(item: Item): string {
   const f = item.formato.toLowerCase()
   if (item.tipo === 'idea')
-    return `Esta idea es un ${f} para el ${diaLargo(item.fecha)} a las ${partesBA(item.fecha).hora} h. ${item.porQue[0]} Lo vemos en el calendario: ${enlace('abrir la idea', item.id, item.fecha)}.`
+    return `Esta idea es un ${f} para el ${diaLargo(item.fecha)} a las ${partesBA(item.fecha).hora} h. ${item.porQue[0] ?? ''} Lo vemos en el calendario: ${enlace('abrir la idea', item.id, item.fecha)}.`
   const r = calcularResumen(PUBLICADAS)
   const vs = item.alcance / r.medianaAlcance
   const comparacion =
@@ -78,22 +78,26 @@ export const chatHandlers = [
     const cuerpo = new ReadableStream<Uint8Array>({
       async start(control) {
         const { signal } = request
-        await esperar(chatMock.retardoMs * 4, signal)
-        const trozos: string[] = []
-        for (let i = 0; i < palabras.length; i += chatMock.palabrasPorTrozo)
-          trozos.push(palabras.slice(i, i + chatMock.palabrasPorTrozo).join(''))
-        const hasta = fallar ? Math.min(3, trozos.length) : trozos.length
-        for (const t of trozos.slice(0, hasta)) {
-          if (signal.aborted) return control.close()
-          control.enqueue(evento(JSON.stringify({ delta: t })))
-          await esperar(chatMock.retardoMs, signal)
+        try {
+          await esperar(chatMock.retardoMs * 4, signal)
+          const trozos: string[] = []
+          for (let i = 0; i < palabras.length; i += chatMock.palabrasPorTrozo)
+            trozos.push(palabras.slice(i, i + chatMock.palabrasPorTrozo).join(''))
+          const hasta = fallar ? Math.min(3, trozos.length) : trozos.length
+          for (const t of trozos.slice(0, hasta)) {
+            if (signal.aborted) return control.close()
+            control.enqueue(evento(JSON.stringify({ delta: t })))
+            await esperar(chatMock.retardoMs, signal)
+          }
+          if (fallar)
+            control.enqueue(
+              evento(JSON.stringify({ detalle: 'Fidel se cortó. Probá de nuevo.' }), 'error'),
+            )
+          else control.enqueue(evento('[DONE]'))
+          control.close()
+        } catch {
+          // El consumidor canceló el stream: no hay a quién avisarle.
         }
-        if (fallar)
-          control.enqueue(
-            evento(JSON.stringify({ detalle: 'Fidel se cortó. Probá de nuevo.' }), 'error'),
-          )
-        else control.enqueue(evento('[DONE]'))
-        control.close()
       },
     })
     return new HttpResponse(cuerpo, {

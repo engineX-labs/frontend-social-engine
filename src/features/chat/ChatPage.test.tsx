@@ -225,3 +225,31 @@ describe('chat con Fidel', () => {
     expect(enlace).toHaveAttribute('href', expect.stringContaining('mes=2026-11'))
   })
 })
+
+describe('historial hacia la API', () => {
+  it('si una respuesta falló sin texto, las preguntas seguidas se juntan para alternar roles', async () => {
+    const cuerpos: PeticionChat[] = []
+    server.use(
+      http.post('*/api/chat', async ({ request }) => {
+        cuerpos.push((await request.json()) as PeticionChat)
+        if (cuerpos.length === 1) return HttpResponse.json({ detalle: 'caído' }, { status: 503 })
+        return new HttpResponse(
+          new ReadableStream({
+            start(c) {
+              c.enqueue(delta('Ok'))
+              c.enqueue(FIN)
+              c.close()
+            },
+          }),
+          { headers: SSE },
+        )
+      }),
+    )
+    montar()
+    await userEvent.type(await screen.findByRole('textbox'), 'uno{Enter}')
+    await screen.findByRole('alert')
+    await userEvent.type(screen.getByRole('textbox'), 'dos{Enter}')
+    await screen.findByText('Ok')
+    expect(cuerpos[1]?.mensajes).toEqual([{ rol: 'usuario', texto: 'uno\n\ndos' }])
+  })
+})

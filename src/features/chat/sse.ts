@@ -89,6 +89,7 @@ export async function* leerEventosSse(
     yield* parser.alimentar(decodificador.decode())
     yield* parser.cerrar()
   } finally {
+    await lector.cancel().catch(() => {})
     lector.releaseLock()
   }
 }
