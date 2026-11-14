@@ -1,0 +1,137 @@
+@import 'tailwindcss';
+
+/* Fuentes autoalojadas (mismas que https://engine.nlabs.com.ar/) */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/fonts/PlusJakartaSans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/fonts/PlusJakartaSans-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/fonts/PlusJakartaSans-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/fonts/PlusJakartaSans-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('/fonts/PlusJakartaSans-800.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+/* Tokens de engineX (valores de https://engine.nlabs.com.ar/). Cada token se define una sola vez
+   con light-dark(claro, oscuro). Sin eleccion del usuario sigue al sistema (color-scheme: light dark);
+   data-theme="light" | "dark" fuerza un modo. */
+:root {
+  color-scheme: light dark;
+  --carbon: #0e1116;
+  --paper: #f4f4f2;
+  --stone: #d9dbd6;
+  --ignite: #ff5b2e;
+  --surface: light-dark(#f4f4f2, #0e1116);
+  --surface-raised: light-dark(#ffffff, #161a21);
+  --surface-inset: light-dark(#ecece8, #0a0c10);
+  --line: light-dark(#dcddd8, #262c36);
+  --line-strong: light-dark(#80847c, #636c7b);
+  --ink: light-dark(#0e1116, #f4f4f2);
+  --ink-muted: light-dark(#5b616b, #9aa1ac);
+  --accent: #ff5b2e;
+  --accent-hover: light-dark(#e64a1f, #ff7a52);
+  --accent-ink: light-dark(#b83510, #ff5b2e);
+  --accent-soft: light-dark(#ffe5dc, #2a1610);
+  --on-accent: #0e1116;
+  --focus-ring: light-dark(#b83510, #ff5b2e);
+  --success: light-dark(#17793c, #5fd68a);
+  --danger: light-dark(#b4123f, #ff9eb0);
+  --glass-bg: light-dark(#ffffffbd, #161a219e);
+  --glass-border: light-dark(#0e11161a, #f4f4f21f);
+  --card-shadow: 0 10px 30px light-dark(#0e111614, transparent);
+  --brand-gradient: linear-gradient(90deg, #ff5b2e, #e0307a 55%, #7c5cff);
+  --brand-gradient-text: linear-gradient(
+    90deg,
+    light-dark(#b83510, #ff7a52),
+    light-dark(#a1124f, #ff6fae) 55%,
+    light-dark(#5a3bd6, #a78bff)
+  );
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-inset: var(--surface-inset);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-card: var(--card-shadow);
+}
+
+@layer base {
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
