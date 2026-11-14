@@ -25,7 +25,7 @@ function Barra({
   referencia?: boolean
 }) {
   return (
-    <div className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3 text-sm">
+    <div className="grid grid-cols-[5.5rem_1fr_auto] items-center gap-3 text-sm">
       <span className="text-muted">{etiqueta}</span>
       <div className="h-2 overflow-hidden rounded-full bg-inset" aria-hidden="true">
         <div
