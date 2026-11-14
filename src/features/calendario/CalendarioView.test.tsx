@@ -198,3 +198,11 @@ describe('CalendarioView (móvil)', () => {
     await waitFor(() => expect(busqueda(router).item).toBe('pub-1'))
   })
 })
+
+describe('CalendarioView (día inválido)', () => {
+  it('ignora un día que no existe en el mes', async () => {
+    montar('/?mes=2026-02&dia=2026-02-31')
+    await screen.findByRole('heading', { name: 'Febrero 2026' })
+    expect(screen.queryByRole('heading', { level: 3 })).toBeNull()
+  })
+})

@@ -10,9 +10,11 @@ export function agruparPorDia(datos: CalendarioMes, ocultar: readonly Tipo[]): M
     ...(ocultar.includes('idea') ? [] : datos.ideas),
   ]
   const porDia = new Map<string, Item[]>()
-  for (const it of todos.sort((a, b) => a.fecha.localeCompare(b.fecha))) {
+  for (const it of todos.sort((a, b) => Date.parse(a.fecha) - Date.parse(b.fecha))) {
     const k = claveDia(it.fecha)
-    porDia.set(k, [...(porDia.get(k) ?? []), it])
+    const lista = porDia.get(k)
+    if (lista) lista.push(it)
+    else porDia.set(k, [it])
   }
   return porDia
 }

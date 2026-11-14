@@ -26,10 +26,21 @@ interface Props {
   porDia: Map<string, Item[]>
   escritorio: boolean
   onDia: (dia: string) => void
+  /** "+N más": elige el día sin alternar (siempre abre su agenda). */
+  onMas: (dia: string) => void
   onItem: (item: Item) => void
 }
 
-export function Grilla({ mes, hoy, seleccionado, porDia, escritorio, onDia, onItem }: Props) {
+export function Grilla({
+  mes,
+  hoy,
+  seleccionado,
+  porDia,
+  escritorio,
+  onDia,
+  onMas,
+  onItem,
+}: Props) {
   return (
     <div>
       <div className="grid grid-cols-7 pb-1 text-center text-xs font-bold text-muted" aria-hidden>
@@ -96,7 +107,7 @@ export function Grilla({ mes, hoy, seleccionado, porDia, escritorio, onDia, onIt
                   {items.length > MAX_CHIPS && (
                     <button
                       type="button"
-                      onClick={() => onDia(dia)}
+                      onClick={() => onMas(dia)}
                       aria-label={`Ver ${items.length - MAX_CHIPS} ${items.length - MAX_CHIPS === 1 ? 'publicación más' : 'publicaciones más'} del ${nombreDia(dia)}`}
                       className="self-start rounded-sm px-1 text-xs font-bold text-muted hover:text-ink"
                     >

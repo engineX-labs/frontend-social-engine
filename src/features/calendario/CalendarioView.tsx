@@ -4,7 +4,7 @@ import { useCalendario } from '@/api/calendario'
 import { EstadoCarga, EstadoError } from '@/components/estados'
 import type { CalendarioSearch } from '@/app/search'
 import type { Item } from '@/domain/types'
-import { claveDia, claveMes } from '@/lib/fecha'
+import { claveDia, claveMes, diasDeGrilla } from '@/lib/fecha'
 import { Agenda } from './Agenda'
 import { agruparPorDia, type Tipo } from './agrupar'
 import { BannerFidel } from './BannerFidel'
@@ -33,7 +33,8 @@ export function CalendarioView() {
   const porDia = useMemo(() => (data ? agruparPorDia(data, ocultar) : null), [data, ocultar])
   const sinFiltros = useMemo(() => (data ? agruparPorDia(data, SIN_OCULTAR) : null), [data])
 
-  const diaExplicito = search.dia?.startsWith(mes) ? search.dia : null
+  const diaExplicito =
+    search.dia?.startsWith(mes) && diasDeGrilla(mes).includes(search.dia) ? search.dia : null
   const primerConItems = [...(sinFiltros?.keys() ?? [])].sort()[0]
   const diaAgenda = diaExplicito ?? (hoy.startsWith(mes) ? hoy : (primerConItems ?? `${mes}-01`))
   // En escritorio la agenda aparece al elegir un día; en móvil siempre hay un día elegido.
@@ -80,6 +81,7 @@ export function CalendarioView() {
             porDia={porDia}
             escritorio={escritorio}
             onDia={elegirDia}
+            onMas={(dia) => ir({ dia })}
             onItem={abrir}
           />
           {mostrarAgenda && (

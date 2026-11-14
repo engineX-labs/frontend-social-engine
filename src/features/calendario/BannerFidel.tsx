@@ -1,14 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import { Sparkles } from 'lucide-react'
 import type { Idea } from '@/domain/types'
-import { hora } from '@/lib/fecha'
+import { claveDia, hora } from '@/lib/fecha'
 import { mayuscula, nombreDia } from './agrupar'
-import { claveDia } from '@/lib/fecha'
 
 /** Resumen de Fidel: cuántas ideas sugirió para el mes y cuál es la primera. */
 export function BannerFidel({ ideas, onVer }: { ideas: Idea[]; onVer: (id: string) => void }) {
   if (!ideas.length) return null
-  const primera = [...ideas].sort((a, b) => a.fecha.localeCompare(b.fecha))[0]!
+  const primera = [...ideas].sort((a, b) => Date.parse(a.fecha) - Date.parse(b.fecha))[0]!
   return (
     <aside
       aria-label="Resumen de Fidel"
