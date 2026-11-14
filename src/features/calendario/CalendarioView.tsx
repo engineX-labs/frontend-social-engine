@@ -1,5 +1,5 @@
 import { getRouteApi } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useCalendario } from '@/api/calendario'
 import { EstadoCarga, EstadoError } from '@/components/estados'
 import type { CalendarioSearch } from '@/app/search'
@@ -21,7 +21,14 @@ export function CalendarioView() {
   const navigate = ruta.useNavigate()
   const escritorio = useEsEscritorio()
 
-  const [ahora] = useState(() => new Date())
+  const [ahora, setAhora] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => {
+      const n = new Date()
+      setAhora((prev) => (claveDia(prev) === claveDia(n) ? prev : n))
+    }, 60_000)
+    return () => clearInterval(t)
+  }, [])
   const hoy = claveDia(ahora)
   const mes = search.mes ?? claveMes(ahora)
   const ocultar = search.ocultar ?? SIN_OCULTAR

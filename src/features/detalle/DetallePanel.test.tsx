@@ -31,7 +31,8 @@ describe('DetallePanel', () => {
     await montar('/?item=pub-1')
     const d = within(await panel())
     expect(await d.findByText('Alcance')).toBeInTheDocument()
-    expect(d.getByText('3.980')).toBeInTheDocument()
+    // El alcance aparece en el resultado y, cuando carga el mes, también en la barra comparativa.
+    expect(d.getAllByText('3.980').length).toBeGreaterThan(0)
     expect(await d.findByText(/× tu mediana/)).toBeInTheDocument()
     expect(d.getByText(/Puesto 1 de/)).toBeInTheDocument()
     expect(d.getByText('Análisis de Fidel')).toBeInTheDocument()

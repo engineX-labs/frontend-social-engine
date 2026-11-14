@@ -45,3 +45,10 @@ describe('validarCalendarioSearch', () => {
     })
   })
 })
+
+describe('validarCalendarioSearch: días reales', () => {
+  it('rechaza fechas inexistentes', () => {
+    expect(validarCalendarioSearch({ dia: '2026-02-31' })).toEqual({})
+    expect(validarCalendarioSearch({ dia: '2026-02-28' })).toEqual({ dia: '2026-02-28' })
+  })
+})

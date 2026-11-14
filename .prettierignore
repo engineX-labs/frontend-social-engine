@@ -4,3 +4,4 @@ package-lock.json
 prototipos
 plans
 *.html
+public/mockServiceWorker.js

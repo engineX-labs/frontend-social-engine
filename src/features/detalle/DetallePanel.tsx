@@ -23,6 +23,7 @@ export function DetallePanel() {
 function Panel({ id }: { id: string }) {
   const navigate = ruta.useNavigate()
   const cerrarRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   const [visible, setVisible] = useState(false)
   const itemQ = useItem(id)
   const item = itemQ.data
@@ -44,6 +45,29 @@ function Panel({ id }: { id: string }) {
     const raf = requestAnimationFrame(() => setVisible(true))
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') cerrarEstable.current()
+      // Con scrim (<1100px) el panel es modal: Tab no sale de él.
+      if (e.key !== 'Tab' || window.matchMedia('(min-width: 1100px)').matches) return
+      const panel = panelRef.current
+      if (!panel) return
+      const foco = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement)
+      const primero = foco[0]
+      const ultimo = foco[foco.length - 1]
+      if (!primero || !ultimo) return
+      const activo = document.activeElement
+      if (!panel.contains(activo)) {
+        e.preventDefault()
+        primero.focus()
+      } else if (e.shiftKey && activo === primero) {
+        e.preventDefault()
+        ultimo.focus()
+      } else if (!e.shiftKey && activo === ultimo) {
+        e.preventDefault()
+        primero.focus()
+      }
     }
     document.addEventListener('keydown', onKey)
     return () => {
@@ -71,6 +95,7 @@ function Panel({ id }: { id: string }) {
         className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-[220ms] min-[1100px]:hidden ${visible ? 'opacity-100' : 'opacity-0'}`}
       />
       <aside
+        ref={panelRef}
         role="dialog"
         aria-labelledby="detalle-titulo"
         className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-xl border-t border-line bg-surface shadow-card transition-transform duration-[220ms] ease-[var(--ease)] min-[820px]:inset-x-auto min-[820px]:inset-y-0 min-[820px]:right-0 min-[820px]:max-h-none min-[820px]:w-[min(440px,100%)] min-[820px]:rounded-none min-[820px]:border-l min-[820px]:border-t-0 min-[820px]:pt-[env(safe-area-inset-top)] ${visible ? 'translate-y-0 min-[820px]:translate-x-0' : 'translate-y-full min-[820px]:translate-x-full min-[820px]:translate-y-0'}`}

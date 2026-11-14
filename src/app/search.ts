@@ -13,10 +13,17 @@ export interface CalendarioSearch {
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
 const DIA = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
 
+function esDiaReal(v: string): boolean {
+  if (!DIA.test(v)) return false
+  const [a, m, d] = v.split('-').map(Number) as [number, number, number]
+  const f = new Date(Date.UTC(a, m - 1, d))
+  return f.getUTCMonth() === m - 1 && f.getUTCDate() === d
+}
+
 export function validarCalendarioSearch(raw: Record<string, unknown>): CalendarioSearch {
   const out: CalendarioSearch = {}
   if (typeof raw.mes === 'string' && MES.test(raw.mes)) out.mes = raw.mes
-  if (typeof raw.dia === 'string' && DIA.test(raw.dia)) out.dia = raw.dia
+  if (typeof raw.dia === 'string' && esDiaReal(raw.dia)) out.dia = raw.dia
   if (typeof raw.item === 'string' && raw.item) out.item = raw.item
   if (Array.isArray(raw.ocultar)) {
     const v = raw.ocultar.filter(

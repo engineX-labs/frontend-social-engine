@@ -22,7 +22,12 @@ Frontend de **social engine** (engineX): calendario de publicaciones e ideas y c
 
 ## Stack (Notion: "Stack social engine")
 
-Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, supabase-js, React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Aún instalados: solo Tailwind, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. El resto se suma en su fase.
+Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, supabase-js, React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Instalados hoy: Tailwind, TanStack Router/Query, MSW, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. Pendientes (se suman cuando se usen): openapi-typescript/openapi-fetch (cuando exista el esquema), supabase-js (login), React Hook Form + Zod (formularios).
+
+## Datos y mocks
+
+- Sin `VITE_API_URL` la app usa datos de ejemplo (MSW, también en el build de producción: así funciona el demo en Vercel). Con `VITE_API_URL` (admite prefijo, p. ej. `https://api.x.com/v1`) habla con el backend real.
+- Contrato de chat (SSE): `POST /api/chat` con `{ mensajes: [{rol, texto}], itemId? }`; responde `text/event-stream` con `data: {"delta":"..."}` y `data: [DONE]`; errores a mitad de stream con `event: error`.
 
 ## Convenciones
 

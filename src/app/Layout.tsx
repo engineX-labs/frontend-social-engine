@@ -1,4 +1,4 @@
-import { Link, Outlet } from '@tanstack/react-router'
+import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { CalendarDays, MessageCircle, Moon, Sun } from 'lucide-react'
 import { Marca } from '@/components/Marca'
 import { useTheme } from './useTheme'
@@ -9,8 +9,15 @@ const activo = 'bg-raised text-ink'
 
 export function Layout() {
   const { tema, alternar } = useTheme()
+  // En escritorio ancho el panel de detalle convive con la grilla: se reserva su espacio.
+  const conPanel = useRouterState({
+    select: (s) =>
+      s.location.pathname === '/' && Boolean((s.location.search as { item?: string }).item),
+  })
   return (
-    <div className="mx-auto min-h-dvh max-w-[1500px] px-4 pb-24 md:pb-12">
+    <div
+      className={`mx-auto min-h-dvh max-w-[1500px] px-4 pb-24 transition-[padding] duration-[220ms] md:pb-12 ${conPanel ? 'min-[1100px]:pr-[456px]' : ''}`}
+    >
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-surface py-3">
         <Link to="/" aria-label="social engine, ir al calendario">
           <Marca />

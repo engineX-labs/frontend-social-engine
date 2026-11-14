@@ -11,11 +11,17 @@ export class ApiError extends Error {
 export const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
 export const USAR_MOCKS = !API_URL
 
+/** Arma la URL respetando un prefijo en VITE_API_URL (p. ej. https://api.x.com/v1). */
+export function urlApi(path: string): URL {
+  const base = API_URL ? API_URL.replace(/\/+$/, '') : window.location.origin
+  return new URL(base + path, window.location.origin)
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit & { params?: Record<string, string> },
 ): Promise<T> {
-  const url = new URL(path, API_URL || window.location.origin)
+  const url = urlApi(path)
   for (const [k, v] of Object.entries(init?.params ?? {})) url.searchParams.set(k, v)
   const res = await fetch(url, init)
   if (!res.ok) {

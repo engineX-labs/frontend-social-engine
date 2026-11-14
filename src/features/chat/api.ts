@@ -1,4 +1,4 @@
-import { API_URL, ApiError } from '@/api/http'
+import { ApiError, urlApi } from '@/api/http'
 import { leerEventosSse } from './sse'
 import type { PeticionChat } from './tipos'
 
@@ -30,7 +30,7 @@ export async function* streamChat(
   peticion: PeticionChat,
   signal?: AbortSignal,
 ): AsyncGenerator<string> {
-  const url = new URL('/api/chat', API_URL || window.location.origin)
+  const url = urlApi('/api/chat')
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
