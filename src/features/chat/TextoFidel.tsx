@@ -1,26 +1,17 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { destinoCalendario, ENLACE, textoVisible } from './citas'
+import { useFidelOpcional } from './contexto'
 
-const ENLACE = /\[([^\]\n]+)\]\((\/[^)\s]*)\)/g
-/** Enlace Markdown a medio llegar al final del texto: se oculta hasta que se completa. */
-const ENLACE_INCOMPLETO = /\[[^\]\n]*(\]\([^)\s]*)?$/
-
-const MES = /^\d{4}-(0[1-9]|1[0-2])$/
-
-function enlace(texto: string, destino: string, clave: number): ReactNode {
-  const url = new URL(destino, 'http://x')
-  const item = url.searchParams.get('item')
-  const mes = url.searchParams.get('mes')
-  if (url.pathname !== '/' || !item) return texto
+/**
+ * Cursor de escritura. Ocupa cero de ancho: nunca empuja una palabra a la línea siguiente,
+ * así que al terminar el stream desaparece sin mover nada.
+ */
+function Cursor() {
   return (
-    <Link
-      key={clave}
-      to="/"
-      search={{ item, ...(mes && MES.test(mes) ? { mes } : {}) }}
-      className="font-semibold text-accent-ink underline underline-offset-4"
-    >
-      {texto}
-    </Link>
+    <span aria-hidden="true" className="relative inline-block h-[1.1em] w-0 align-text-bottom">
+      <span className="absolute inset-y-0 left-0.5 w-0.5 animate-cursor rounded-full bg-accent motion-reduce:animate-none" />
+    </span>
   )
 }
 
@@ -29,14 +20,35 @@ function enlace(texto: string, destino: string, clave: number): ReactNode {
  * todo lo demás se muestra como texto plano (sin HTML).
  */
 export function TextoFidel({ texto, enCurso }: { texto: string; enCurso?: boolean }) {
-  const visible = enCurso ? texto.replace(ENLACE_INCOMPLETO, '') : texto
+  const fidel = useFidelOpcional()
+  const visible = textoVisible(texto, enCurso)
   const partes: ReactNode[] = []
   let desde = 0
   for (const m of visible.matchAll(ENLACE)) {
     if (m.index > desde) partes.push(visible.slice(desde, m.index))
-    partes.push(enlace(m[1]!, m[2]!, m.index))
+    const cita = destinoCalendario(m[2]!)
+    partes.push(
+      cita ? (
+        <Link
+          key={m.index}
+          to="/"
+          search={(prev) => ({ ...prev, ...cita })}
+          onClick={fidel?.alCitar}
+          className="rounded-sm font-semibold text-accent-ink underline decoration-accent-ink/40 underline-offset-4 transition-colors duration-(--dur-fast) hover:decoration-accent-ink"
+        >
+          {m[1]}
+        </Link>
+      ) : (
+        m[1]
+      ),
+    )
     desde = m.index + m[0].length
   }
   if (desde < visible.length) partes.push(visible.slice(desde))
-  return <p className="whitespace-pre-wrap break-words">{partes}</p>
+  return (
+    <p className="leading-7 break-words whitespace-pre-wrap">
+      {partes}
+      {enCurso && <Cursor />}
+    </p>
+  )
 }

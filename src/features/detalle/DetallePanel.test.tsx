@@ -60,7 +60,7 @@ describe('DetallePanel', () => {
     await montar('/?item=idea-1')
     const d = within(await panel())
     await user.click(await d.findByRole('button', { name: 'Copiar copy' }))
-    expect(await d.findByText('Copiado')).toBeInTheDocument()
+    expect(await screen.findByText(/Copy copiado/)).toBeInTheDocument()
     expect(await navigator.clipboard.readText()).toMatch(/Cinco looks/)
   })
 
@@ -90,11 +90,13 @@ describe('DetallePanel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/No encontramos/)
   })
 
-  it('"Preguntarle a Fidel" navega a /chat?item=', async () => {
+  it('"Preguntarle a Fidel" abre a Fidel con la idea como contexto', async () => {
     const { router } = await montar('/?item=idea-2')
-    await userEvent.click(await screen.findByRole('link', { name: /Preguntarle a Fidel/ }))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/chat'))
-    expect(router.state.location.search).toEqual({ item: 'idea-2' })
+    await userEvent.click(await screen.findByRole('button', { name: /Preguntarle a Fidel/ }))
+    // Sin matchMedia (jsdom) el detalle se trata como modal: se cierra para dejar a Fidel a la vista.
+    await waitFor(() => expect(router.state.location.search).toEqual({ sobre: 'idea-2' }))
+    const barra = await screen.findByRole('complementary', { name: 'Fidel' })
+    expect(await within(barra).findByTestId('contexto-texto')).toHaveTextContent(/^Idea:/)
   })
 })
 

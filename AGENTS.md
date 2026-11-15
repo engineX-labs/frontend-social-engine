@@ -4,7 +4,7 @@ Frontend de **social engine** (engineX): calendario de publicaciones e ideas y c
 
 ## Estructura
 
-- `src/`: app React (`App.tsx`, `main.tsx`, `index.css` con los tokens de engineX, `lib/utils.ts`, `test/setup.ts`).
+- `src/`: app React (un solo dashboard: calendario + Fidel en barra lateral izquierda en escritorio y hoja con botón flotante en móvil; `features/chat/FidelProvider.tsx` guarda la conversación; `main.tsx`, `index.css` con los tokens de engineX, `lib/utils.ts`, `test/setup.ts`).
 - `public/fonts/`: Plus Jakarta Sans y JetBrains Mono (copiadas de https://engine.nlabs.com.ar/).
 - `prototipos/`: HTML de referencia (calendario, pizarrón). No forman parte del build.
 - `plans/`: planes de trabajo (`plans/frontend-calendario.md`, aprobado).

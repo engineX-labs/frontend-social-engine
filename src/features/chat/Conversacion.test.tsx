@@ -87,12 +87,12 @@ describe('chat con Fidel', () => {
     server.use(http.post('*/api/chat', () => new HttpResponse(s.cuerpo, { headers: SSE })))
     montar()
     await userEvent.type(await screen.findByRole('textbox'), 'hola{Enter}')
-    expect(await screen.findByText('Fidel está escribiendo…')).toBeInTheDocument()
+    expect(await screen.findByText('Fidel está mirando tus datos…')).toBeInTheDocument()
     expect(screen.getByRole('log')).toHaveAttribute('aria-busy', 'true')
 
     s.enviar(delta('Tu mejor '))
     expect(await screen.findByText('Tu mejor')).toBeInTheDocument()
-    expect(screen.queryByText('Fidel está escribiendo…')).not.toBeInTheDocument()
+    expect(screen.queryByText('Fidel está mirando tus datos…')).not.toBeInTheDocument()
     s.enviar(delta('reel fue el del martes.'))
     expect(await screen.findByText('Tu mejor reel fue el del martes.')).toBeInTheDocument()
 
@@ -223,6 +223,26 @@ describe('chat con Fidel', () => {
     const enlace = await screen.findByRole('link', { name: 'Ver la publicación' })
     expect(enlace).toHaveAttribute('href', expect.stringContaining('item=pub-1'))
     expect(enlace).toHaveAttribute('href', expect.stringContaining('mes=2026-11'))
+    // La publicación citada también aparece como tarjeta con su cifra.
+    const citadas = await screen.findByRole('list', { name: 'Publicaciones citadas' })
+    expect(
+      await within(citadas).findByRole('link', {
+        name: /3\.980 de alcance\. Abrir en el calendario/,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('mientras llega el texto muestra el cursor y al terminar lo quita', async () => {
+    const s = streamControlado()
+    server.use(http.post('*/api/chat', () => new HttpResponse(s.cuerpo, { headers: SSE })))
+    montar()
+    await userEvent.type(await screen.findByRole('textbox'), 'hola{Enter}')
+    s.enviar(delta('Hola'))
+    const texto = await screen.findByText('Hola', { selector: 'p' })
+    expect(texto.querySelector('.animate-cursor')).not.toBeNull()
+    s.enviar(FIN)
+    s.cerrar()
+    await waitFor(() => expect(texto.querySelector('.animate-cursor')).toBeNull())
   })
 })
 

@@ -2,16 +2,82 @@
 <html lang="es-AR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>social engine · engineX</title>
+    <meta
+      name="description"
+      content="Tus publicaciones de Instagram en un calendario: qué funcionó, qué publicar después y Fidel, el asistente que te lo explica."
+    />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f4f4f2" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0e1116" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="social engine" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="social engine" />
+    <meta property="og:title" content="social engine · engineX" />
+    <meta
+      property="og:description"
+      content="Tus publicaciones, qué funcionó y qué publicar después."
+    />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preload" href="/fonts/PlusJakartaSans-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/PlusJakartaSans-800.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      /* Pantalla de arranque: se ve mientras cargan el código y los datos; React la reemplaza. */
+      /* Solo mientras está la pantalla de arranque: después manda el tema de la app. */
+      html:has(.arranque) {
+        background: #f4f4f2;
+      }
+      @media (prefers-color-scheme: dark) {
+        html:has(.arranque) {
+          background: #0e1116;
+        }
+      }
+      .arranque {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #0e1116;
+      }
+      @media (prefers-color-scheme: dark) {
+        .arranque {
+          color: #f4f4f2;
+        }
+      }
+      .arranque svg {
+        width: 44px;
+        height: 44px;
+        animation: arranque 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+      }
+      @keyframes arranque {
+        50% {
+          opacity: 0.45;
+          transform: scale(0.94);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .arranque svg {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="arranque" role="status" aria-label="Cargando social engine">
+        <svg viewBox="0 0 16 16" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2.5 2.5 13 13" stroke="currentColor" />
+          <path d="M2.5 13.5 13 3M7.5 3H13v5.5" stroke="#ff5b2e" />
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

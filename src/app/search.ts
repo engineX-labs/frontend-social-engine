@@ -8,6 +8,10 @@ export interface CalendarioSearch {
   item?: string
   /** Tipos ocultos por los filtros. */
   ocultar?: Array<'publicada' | 'idea'>
+  /** Publicación o idea sobre la que se le pregunta a Fidel (chip de contexto del chat). */
+  sobre?: string
+  /** Pedido de abrir la barra de Fidel; se consume y se quita de la URL. */
+  fidel?: 'abierto'
 }
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
@@ -31,10 +35,12 @@ export function validarCalendarioSearch(raw: Record<string, unknown>): Calendari
     )
     if (v.length) out.ocultar = v
   }
+  if (typeof raw.sobre === 'string' && raw.sobre) out.sobre = raw.sobre
+  if (raw.fidel === 'abierto') out.fidel = 'abierto'
   return out
 }
 
-/** Contexto con el que se abre el chat desde otra pantalla (p. ej. "Preguntale a Fidel"). */
+/** `/chat?item=` (enlaces viejos): se redirige al calendario con Fidel abierto sobre ese ítem. */
 export interface ChatSearch {
   item?: string
 }
