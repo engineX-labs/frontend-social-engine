@@ -108,6 +108,17 @@ describe('CalendarioView (escritorio)', () => {
     expect(busqueda(router).mes).toBe('2026-11')
   })
 
+  it('el resumen muestra las cifras del mes y abre la mejor publicación', async () => {
+    const router = montar('/?mes=2026-11')
+    const resumen = await screen.findByRole('region', { name: 'Resumen' })
+    const r = within(resumen)
+    expect(r.getByText('Publicaciones')).toBeInTheDocument()
+    expect(r.getByText('Mediana de alcance')).toBeInTheDocument()
+    expect(r.getByText('Mejor horario')).toBeInTheDocument()
+    await userEvent.click(r.getByRole('button', { name: /Tu mejor publicación de noviembre/ }))
+    await waitFor(() => expect(busqueda(router).item).toBe('pub-1'))
+  })
+
   it('el banner abre la primera idea', async () => {
     const router = montar('/?mes=2026-11')
     await userEvent.click(await screen.findByRole('button', { name: 'Ver idea' }))

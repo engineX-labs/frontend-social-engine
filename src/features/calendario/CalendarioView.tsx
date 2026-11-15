@@ -1,15 +1,18 @@
 import { getRouteApi } from '@tanstack/react-router'
+import { motion, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useCalendario } from '@/api/calendario'
-import { EstadoCarga, EstadoError } from '@/components/estados'
+import { EstadoError } from '@/components/estados'
 import type { CalendarioSearch } from '@/app/search'
+import { conRendimiento } from '@/domain/metrics'
 import type { Item } from '@/domain/types'
-import { claveDia, claveMes, diasDeGrilla } from '@/lib/fecha'
+import { claveDia, claveMes, desplazarMes, diasDeGrilla } from '@/lib/fecha'
 import { Agenda } from './Agenda'
 import { agruparPorDia, type Tipo } from './agrupar'
-import { BannerFidel } from './BannerFidel'
 import { BarraMes } from './BarraMes'
-import { Grilla } from './Grilla'
+import { Grilla, GrillaEsqueleto, type Rendimientos } from './Grilla'
+import { Resumen, ResumenEsqueleto } from './Resumen'
+import { TarjetaFidel } from './TarjetaFidel'
 import { useEsEscritorio } from './useMedia'
 
 const ruta = getRouteApi('/')
@@ -39,6 +42,26 @@ export function CalendarioView() {
 
   const porDia = useMemo(() => (data ? agruparPorDia(data, ocultar) : null), [data, ocultar])
   const sinFiltros = useMemo(() => (data ? agruparPorDia(data, SIN_OCULTAR) : null), [data])
+  const rendimientos = useMemo<Rendimientos>(
+    () =>
+      new Map(
+        data?.resumen
+          ? conRendimiento(data.publicadas, data.resumen).map((p) => [
+              p.id,
+              { razon: p.razon, clase: p.clase },
+            ])
+          : [],
+      ),
+    [data],
+  )
+
+  // Dirección del último cambio de mes: la grilla nueva entra desde ese lado.
+  const [mesPrevio, setMesPrevio] = useState(mes)
+  const [direccion, setDireccion] = useState(0)
+  if (mesPrevio !== mes) {
+    setDireccion(mes > mesPrevio ? 1 : -1)
+    setMesPrevio(mes)
+  }
 
   const diaExplicito =
     search.dia?.startsWith(mes) && diasDeGrilla(mes).includes(search.dia) ? search.dia : null
@@ -54,6 +77,15 @@ export function CalendarioView() {
   const abrir = (it: Item) => ir({ item: it.id, dia: claveDia(it.fecha) })
   const elegirDia = (dia: string) =>
     ir({ dia: escritorio && dia === diaExplicito ? undefined : dia })
+  const cambiarMes = (m: string) => ir({ mes: m, dia: undefined, item: undefined })
+
+  // Móvil: deslizar a los lados cambia de mes (los botones siguen siendo la vía con teclado).
+  const alSoltar = (_: unknown, info: PanInfo) => {
+    const { offset, velocity } = info
+    if (Math.abs(offset.x) < Math.abs(offset.y)) return
+    if (offset.x < -60 || velocity.x < -500) cambiarMes(desplazarMes(mes, 1))
+    else if (offset.x > 60 || velocity.x > 500) cambiarMes(desplazarMes(mes, -1))
+  }
 
   return (
     <section aria-label="Calendario" className="flex flex-col gap-4">
@@ -62,11 +94,16 @@ export function CalendarioView() {
         mes={mes}
         ocultar={ocultar}
         cuentas={data ? { publicada: data.publicadas.length, idea: data.ideas.length } : null}
-        onMes={(m) => ir({ mes: m, dia: undefined, item: undefined })}
+        onMes={cambiarMes}
         onHoy={() => ir({ mes: undefined, dia: hoy, item: undefined })}
         onFiltro={alternar}
       />
-      {isPending && <EstadoCarga texto="Cargando el mes…" />}
+      {isPending && (
+        <div role="status" aria-label="Cargando el mes" className="flex flex-col gap-4">
+          <ResumenEsqueleto />
+          <GrillaEsqueleto escritorio={escritorio} />
+        </div>
+      )}
       {isError && (
         <EstadoError
           mensaje="No pudimos cargar el calendario."
@@ -75,27 +112,44 @@ export function CalendarioView() {
       )}
       {data && porDia && sinFiltros && (
         <>
-          <BannerFidel ideas={data.ideas} onVer={(id) => ir({ item: id })} />
+          <Resumen datos={data} onItem={(id) => ir({ item: id })} />
+          <TarjetaFidel ideas={data.ideas} onVer={(id) => ir({ item: id })} />
           {data.publicadas.length + data.ideas.length === 0 && (
-            <p className="rounded-lg border border-dashed border-line px-4 py-3 text-sm text-muted">
+            <p className="rounded-xl bg-inset/60 px-4 py-3 text-sm text-muted">
               Este mes todavía no tiene publicaciones ni ideas.
             </p>
           )}
-          <Grilla
-            mes={mes}
-            hoy={hoy}
-            seleccionado={mostrarAgenda ? diaAgenda : null}
-            porDia={porDia}
-            escritorio={escritorio}
-            onDia={elegirDia}
-            onMas={(dia) => ir({ dia })}
-            onItem={abrir}
-          />
+          <motion.div
+            key={mes}
+            initial={{ opacity: 0, x: direccion * 28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+            drag={escritorio ? false : 'x'}
+            dragDirectionLock
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.18}
+            dragSnapToOrigin
+            onDragEnd={alSoltar}
+            className="touch-pan-y"
+          >
+            <Grilla
+              mes={mes}
+              hoy={hoy}
+              seleccionado={mostrarAgenda ? diaAgenda : null}
+              porDia={porDia}
+              rendimientos={rendimientos}
+              escritorio={escritorio}
+              onDia={elegirDia}
+              onMas={(dia) => ir({ dia })}
+              onItem={abrir}
+            />
+          </motion.div>
           {mostrarAgenda && (
             <Agenda
               dia={diaAgenda}
               hoy={hoy}
               items={porDia.get(diaAgenda) ?? []}
+              rendimientos={rendimientos}
               ocultas={
                 (sinFiltros.get(diaAgenda)?.length ?? 0) - (porDia.get(diaAgenda)?.length ?? 0)
               }

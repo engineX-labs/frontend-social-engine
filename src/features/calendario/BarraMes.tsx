@@ -1,10 +1,9 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, EyeOff } from 'lucide-react'
+import { AvatarFidel } from '@/components/ui/AvatarFidel'
+import { Boton } from '@/components/ui/Boton'
 import { nombreMes, desplazarMes } from '@/lib/fecha'
 import { cn } from '@/lib/utils'
 import type { Tipo } from './agrupar'
-
-const boton =
-  'inline-grid min-h-10 min-w-10 place-items-center rounded-md border border-line bg-raised px-3 text-sm font-semibold hover:border-line-strong'
 
 interface Props {
   mes: string
@@ -26,28 +25,30 @@ export function BarraMes({ mes, ocultar, cuentas, onMes, onHoy, onFiltro }: Prop
       <h2 aria-live="polite" className="mr-auto text-2xl font-extrabold tracking-tight">
         {nombreMes(mes)}
       </h2>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className={boton}
+      <div className="flex items-center gap-1.5">
+        <Boton
+          tamano="icono"
           aria-label={`Mes anterior, ${nombreMes(desplazarMes(mes, -1))}`}
           onClick={() => onMes(desplazarMes(mes, -1))}
         >
           <ChevronLeft className="size-4" aria-hidden="true" />
-        </button>
-        <button type="button" className={boton} onClick={onHoy}>
-          Hoy
-        </button>
-        <button
-          type="button"
-          className={boton}
+        </Boton>
+        <Boton onClick={onHoy}>Hoy</Boton>
+        <Boton
+          tamano="icono"
           aria-label={`Mes siguiente, ${nombreMes(desplazarMes(mes, 1))}`}
           onClick={() => onMes(desplazarMes(mes, 1))}
         >
           <ChevronRight className="size-4" aria-hidden="true" />
-        </button>
+        </Boton>
       </div>
-      <div role="group" aria-label="Filtrar por tipo" className="flex w-full gap-2 sm:w-auto">
+      {/* Dos interruptores independientes sobre un mismo riel: encendido = pieza elevada con su
+          marca; apagado = plano, con el ojo tachado. */}
+      <div
+        role="group"
+        aria-label="Filtrar por tipo"
+        className="flex w-full gap-1 rounded-lg bg-inset p-1 sm:w-auto"
+      >
         {FILTROS.map(({ tipo, texto }) => {
           const visible = !ocultar.includes(tipo)
           return (
@@ -57,16 +58,24 @@ export function BarraMes({ mes, ocultar, cuentas, onMes, onHoy, onFiltro }: Prop
               aria-pressed={visible}
               onClick={() => onFiltro(tipo)}
               className={cn(
-                'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm font-semibold sm:flex-none',
+                'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold select-none sm:min-h-9 sm:flex-none',
+                'transition-[background-color,color,box-shadow,transform] duration-(--dur-fast) ease-brand active:scale-[0.97] active:duration-(--dur-press)',
                 visible
-                  ? tipo === 'idea'
-                    ? 'border-dashed border-accent bg-accent-soft text-accent-ink'
-                    : 'border-line-strong bg-raised text-ink'
-                  : 'border-line text-muted line-through decoration-1 hover:text-ink',
+                  ? 'bg-raised text-ink shadow-[0_1px_3px_#0e111629]'
+                  : 'text-muted hover:text-ink',
               )}
             >
+              {!visible ? (
+                <EyeOff className="size-4" aria-hidden="true" />
+              ) : tipo === 'idea' ? (
+                <AvatarFidel tamano="xs" className="size-4" />
+              ) : (
+                <Check className="size-4" strokeWidth={3} aria-hidden="true" />
+              )}
               {texto}
-              {cuentas && <span className="font-mono text-xs">{cuentas[tipo]}</span>}
+              {cuentas && (
+                <span className="cifra font-mono text-xs text-muted">{cuentas[tipo]}</span>
+              )}
             </button>
           )
         })}
