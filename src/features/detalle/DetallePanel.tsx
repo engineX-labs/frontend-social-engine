@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { MessageCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { AnimatePresence, motion, useDragControls, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { calendarioQuery, useItem } from '@/api/calendario'
 import { ApiError } from '@/api/http'
-import { EstadoCarga, EstadoError } from '@/components/estados'
+import { EstadoError } from '@/components/estados'
 import { EtiquetaTipo } from '@/components/EtiquetaTipo'
+import { AvatarFidel } from '@/components/ui/AvatarFidel'
+import { Boton } from '@/components/ui/Boton'
+import { botonClases } from '@/components/ui/boton-clases'
+import { Esqueleto } from '@/components/ui/Esqueleto'
 import { conRendimiento } from '@/domain/metrics'
 import { diaLargo } from '@/lib/fecha'
 import { DetalleIdea } from './DetalleIdea'
@@ -14,31 +19,37 @@ import { mesDe } from './formato'
 
 const ruta = getRouteApi('/')
 
+/** Spring del panel: entra con un leve asentamiento, sin rebote visible. */
+const RESORTE = { type: 'spring', stiffness: 420, damping: 40, mass: 0.9 } as const
+/** La salida es más corta que la entrada: cerrar no se hace esperar. */
+const SALIDA = { duration: 0.2, ease: [0.4, 0, 1, 1] } as const
+
 /** Panel de detalle: lateral ≥820px, bottom sheet en móvil. Se abre con `?item=<id>`. */
 export function DetallePanel() {
   const { item } = ruta.useSearch()
-  return item ? <Panel id={item} /> : null
+  return <AnimatePresence>{item ? <Panel key="detalle" id={item} /> : null}</AnimatePresence>
 }
 
-/** Con scrim (<1100px) el panel es modal; en escritorio ancho convive con la grilla. */
-function useModal() {
-  const [modal, setModal] = useState(() => !window.matchMedia?.('(min-width: 1100px)').matches)
+function useMedia(consulta: string) {
+  const [coincide, setCoincide] = useState(() => Boolean(window.matchMedia?.(consulta).matches))
   useEffect(() => {
-    const mq = window.matchMedia?.('(min-width: 1100px)')
+    const mq = window.matchMedia?.(consulta)
     if (!mq) return
-    const fn = () => setModal(!mq.matches)
+    const fn = () => setCoincide(mq.matches)
     mq.addEventListener('change', fn)
     return () => mq.removeEventListener('change', fn)
-  }, [])
-  return modal
+  }, [consulta])
+  return coincide
 }
 
 function Panel({ id }: { id: string }) {
   const navigate = ruta.useNavigate()
-  const modal = useModal()
+  // Con scrim (<1100px) el panel es modal; en escritorio ancho convive con la grilla.
+  const modal = !useMedia('(min-width: 1100px)')
+  const lateral = useMedia('(min-width: 820px)')
+  const arrastre = useDragControls()
   const cerrarRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
-  const [visible, setVisible] = useState(false)
   const itemQ = useItem(id)
   const item = itemQ.data
 
@@ -53,14 +64,12 @@ function Panel({ id }: { id: string }) {
     cerrarEstable.current = cerrar
   })
 
-  // Foco al abrir y devolución al cerrar; Escape; animación de entrada.
+  // Foco al abrir y devolución al cerrar; Escape; trampa de foco cuando es modal.
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     cerrarRef.current?.focus()
-    const raf = requestAnimationFrame(() => setVisible(true))
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') cerrarEstable.current()
-      // Con scrim (<1100px) el panel es modal: Tab no sale de él.
       if (e.key !== 'Tab' || window.matchMedia?.('(min-width: 1100px)').matches) return
       const panel = panelRef.current
       if (!panel) return
@@ -86,7 +95,6 @@ function Panel({ id }: { id: string }) {
     }
     document.addEventListener('keydown', onKey)
     return () => {
-      cancelAnimationFrame(raf)
       document.removeEventListener('keydown', onKey)
       if (opener?.isConnected) opener.focus()
     }
@@ -102,41 +110,81 @@ function Panel({ id }: { id: string }) {
     ? `${item.tipo === 'publicada' ? item.formato : `Idea: ${item.formato}`} · ${diaLargo(item.fecha)}`
     : 'Detalle'
 
+  // Bottom sheet: se cierra al soltarlo con un tirón o pasada la cuarta parte de su alto.
+  const alSoltar = (_: unknown, info: PanInfo) => {
+    const alto = panelRef.current?.offsetHeight ?? 600
+    if (info.offset.y > alto * 0.25 || info.velocity.y > 600) cerrar()
+  }
+
+  const fuera = lateral ? { x: '100%' } : { y: '100%' }
+
   return (
     <>
-      <div
+      <motion.div
         aria-hidden="true"
         onClick={cerrar}
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-[220ms] motion-reduce:transition-none min-[1100px]:hidden ${visible ? 'opacity-100' : 'opacity-0'}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: SALIDA }}
+        transition={{ duration: 0.24 }}
+        className="fixed inset-0 z-40 bg-scrim min-[1100px]:hidden"
       />
-      <aside
+      <motion.aside
         ref={panelRef}
         role="dialog"
         aria-modal={modal}
         aria-labelledby="detalle-titulo"
-        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-xl border-t border-line bg-surface shadow-card transition-transform duration-[220ms] ease-[var(--ease)] motion-reduce:transition-none min-[820px]:inset-x-auto min-[820px]:inset-y-0 min-[820px]:right-0 min-[820px]:max-h-none min-[820px]:w-[min(440px,100%)] min-[820px]:rounded-none min-[820px]:border-l min-[820px]:border-t-0 min-[820px]:pt-[env(safe-area-inset-top)] ${visible ? 'translate-y-0 min-[820px]:translate-x-0' : 'translate-y-full min-[820px]:translate-x-full min-[820px]:translate-y-0'}`}
+        initial={fuera}
+        animate={{ x: 0, y: 0 }}
+        exit={{ ...fuera, transition: SALIDA }}
+        transition={RESORTE}
+        drag={lateral ? false : 'y'}
+        dragControls={arrastre}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0.04, bottom: 0.9 }}
+        onDragEnd={alSoltar}
+        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-glass-line bg-surface shadow-pop min-[820px]:inset-x-auto min-[820px]:inset-y-0 min-[820px]:right-0 min-[820px]:max-h-none min-[820px]:w-[min(440px,100%)] min-[820px]:rounded-none min-[820px]:border-l min-[820px]:border-t-0 min-[820px]:border-line min-[820px]:pt-[env(safe-area-inset-top)]"
       >
-        <header className="flex items-start gap-3 border-b border-line p-4">
-          <div className="min-w-0 flex-1 space-y-2">
-            {item && <EtiquetaTipo tipo={item.tipo} />}
-            <h2 id="detalle-titulo" className="text-lg font-extrabold leading-tight tracking-tight">
+        {/* Manija: zona de arrastre del bottom sheet. Con teclado se cierra con Escape o el botón. */}
+        <div
+          aria-hidden="true"
+          onPointerDown={(e) => arrastre.start(e)}
+          className="flex h-6 shrink-0 cursor-grab touch-none items-end justify-center active:cursor-grabbing min-[820px]:hidden"
+        >
+          <span className="h-1 w-10 rounded-full bg-line-strong/70" />
+        </div>
+
+        <header
+          onPointerDown={(e) => {
+            if (!lateral && !(e.target as HTMLElement).closest('button')) arrastre.start(e)
+          }}
+          className="flex items-start gap-3 px-5 pb-4 pt-2 min-[820px]:pt-5"
+        >
+          <div className="min-w-0 flex-1 space-y-2.5">
+            {item ? <EtiquetaTipo tipo={item.tipo} /> : <Esqueleto className="h-6 w-24" />}
+            <h2
+              id="detalle-titulo"
+              className="text-xl font-extrabold leading-tight tracking-[-0.02em] first-letter:uppercase"
+            >
               {titulo}
             </h2>
           </div>
-          <button
+          <Boton
             ref={cerrarRef}
-            type="button"
+            variante="fantasma"
+            tamano="icono"
             onClick={cerrar}
             aria-label="Cerrar detalle"
-            className="grid size-10 shrink-0 place-items-center rounded-md border border-line bg-raised hover:border-line-strong"
+            className="-mr-2 -mt-1"
           >
-            <X className="size-4" aria-hidden="true" />
-          </button>
+            <X className="size-5" aria-hidden="true" />
+          </Boton>
         </header>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain border-t border-hairline px-5 py-5">
           {!item && itemQ.isPending ? (
-            <EstadoCarga texto="Cargando el detalle…" />
+            <CargandoDetalle />
           ) : !item ? (
             <EstadoError
               mensaje={
@@ -148,6 +196,7 @@ function Panel({ id }: { id: string }) {
             />
           ) : item.tipo === 'publicada' ? (
             <DetallePublicada
+              key={item.id}
               pub={item}
               rendimiento={rendimiento}
               resumen={calQ.data?.resumen ?? null}
@@ -158,18 +207,39 @@ function Panel({ id }: { id: string }) {
         </div>
 
         {item && (
-          <footer className="border-t border-line p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <footer className="border-t border-hairline px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Link
               to="/chat"
               search={{ item: item.id }}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-bold text-on-accent hover:bg-accent-hover"
+              className={botonClases({ variante: 'primario', className: 'w-full' })}
             >
-              <MessageCircle className="size-4" aria-hidden="true" />
+              <AvatarFidel tamano="xs" />
               Preguntarle a Fidel
             </Link>
           </footer>
         )}
-      </aside>
+      </motion.aside>
     </>
+  )
+}
+
+function CargandoDetalle() {
+  return (
+    <div role="status" aria-label="Cargando el detalle" className="space-y-6">
+      <div className="flex gap-4">
+        <Esqueleto className="aspect-[4/5] w-32 rounded-xl" />
+        <div className="flex-1 space-y-3 pt-1">
+          <Esqueleto className="h-3 w-16" />
+          <Esqueleto className="h-9 w-28" />
+          <Esqueleto className="h-6 w-32 rounded-full" />
+        </div>
+      </div>
+      <Esqueleto className="h-16 w-full rounded-xl" />
+      <div className="space-y-2">
+        <Esqueleto className="h-3 w-full" />
+        <Esqueleto className="h-3 w-11/12" />
+        <Esqueleto className="h-3 w-2/3" />
+      </div>
+    </div>
   )
 }

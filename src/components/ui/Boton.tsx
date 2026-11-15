@@ -1,9 +1,9 @@
 import type { VariantProps } from 'class-variance-authority'
-import type { ButtonHTMLAttributes } from 'react'
+import type { ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
 import { botonClases } from './boton-clases'
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof botonClases>
+type Props = ComponentProps<'button'> & VariantProps<typeof botonClases>
 
 export function Boton({ className, variante, tamano, type = 'button', ...resto }: Props) {
   return (
