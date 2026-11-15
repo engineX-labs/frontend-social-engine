@@ -4,9 +4,8 @@ import { useItem } from '@/api/calendario'
 import { Portada } from '@/components/Portada'
 import { Esqueleto } from '@/components/ui/Esqueleto'
 import { claveMes, diaCorto, hora } from '@/lib/fecha'
+import { num } from '@/lib/formato'
 import type { Cita } from './citas'
-
-const miles = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
 /** Mismo alto en carga y con datos: la respuesta no salta cuando llega la publicación. */
 const CAJA = 'flex h-[4.5rem] w-full max-w-sm items-center gap-3 rounded-lg border p-2 pr-3'
@@ -38,7 +37,7 @@ export function TarjetaPublicacion({ cita }: { cita: Cita }) {
       search={{ item: data.id, mes: claveMes(data.fecha) }}
       aria-label={
         publicada
-          ? `${data.formato} del ${diaCorto(data.fecha)}, ${miles(data.alcance)} de alcance. Abrir en el calendario`
+          ? `${data.formato} del ${diaCorto(data.fecha)}, ${num(data.alcance)} de alcance. Abrir en el calendario`
           : `Idea de ${data.formato.toLowerCase()} para el ${diaCorto(data.fecha)}. Abrir en el calendario`
       }
       className={`${CAJA} group animate-aparecer border-line bg-raised shadow-card transition-[border-color,transform] duration-(--dur-fast) ease-brand [animation-duration:var(--dur-base)] hover:border-line-strong active:scale-[0.98] active:duration-(--dur-press)`}
@@ -54,7 +53,7 @@ export function TarjetaPublicacion({ cita }: { cita: Cita }) {
         {publicada ? (
           <span className="mt-0.5 flex items-baseline gap-1.5">
             <span className="cifra font-mono text-lg leading-6 font-medium">
-              {miles(data.alcance)}
+              {num(data.alcance)}
             </span>
             <span className="text-xs text-muted">de alcance</span>
           </span>

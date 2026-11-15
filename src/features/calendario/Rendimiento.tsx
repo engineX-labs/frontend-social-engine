@@ -1,6 +1,7 @@
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { detalleRendimiento, type Rendimiento } from './formato'
+import { textoRazon } from '@/lib/formato'
+import type { Rendimiento } from './formato'
 
 const INFO = {
   sube: { Icono: TrendingUp, color: 'text-success' },
@@ -28,7 +29,7 @@ export function IndicadorRendimiento({
       )}
     >
       <Icono className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
-      {conTexto && <span className="cifra">{detalleRendimiento(rendimiento)}</span>}
+      {conTexto && <span className="cifra">{textoRazon(rendimiento.razon)}</span>}
     </span>
   )
 }

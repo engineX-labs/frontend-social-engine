@@ -7,7 +7,8 @@ import type { CalendarioMes } from '@/domain/types'
 import { cn } from '@/lib/utils'
 import { claveDia } from '@/lib/fecha'
 import { nombreDia } from './agrupar'
-import { fmtNum, mesEnMinuscula } from './formato'
+import { num } from '@/lib/formato'
+import { mesEnMinuscula } from './formato'
 import { IndicadorRendimiento } from './Rendimiento'
 import { useConteo } from './useConteo'
 
@@ -22,11 +23,11 @@ function Cifra({ valor, sufijo }: { valor: number; sufijo?: string }) {
   return (
     <>
       <span aria-hidden="true">
-        {fmtNum(n)}
+        {num(n)}
         {sufijo}
       </span>
       <span className="sr-only">
-        {fmtNum(valor)}
+        {num(valor)}
         {sufijo}
       </span>
     </>
@@ -75,7 +76,7 @@ export function Resumen({ datos, onItem }: { datos: CalendarioMes; onItem: (id: 
         <button
           type="button"
           onClick={() => onItem(mejor.id)}
-          aria-label={`Tu mejor publicación de ${mes}: ${mejor.formato} del ${nombreDia(claveDia(mejor.fecha))}, ${fmtNum(mejor.alcance)} de alcance. Ver detalle`}
+          aria-label={`Tu mejor publicación de ${mes}: ${mejor.formato} del ${nombreDia(claveDia(mejor.fecha))}, ${num(mejor.alcance)} de alcance. Ver detalle`}
           className={cn(
             PROTAGONISTA,
             'group transition-colors duration-(--dur-fast) ease-brand hover:bg-inset/60 active:bg-inset',

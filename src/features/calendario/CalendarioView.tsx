@@ -1,6 +1,6 @@
 import { getRouteApi } from '@tanstack/react-router'
 import { motion, type PanInfo } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendario } from '@/api/calendario'
 import { EstadoError } from '@/components/estados'
 import type { CalendarioSearch } from '@/app/search'
@@ -13,7 +13,7 @@ import { BarraMes } from './BarraMes'
 import { Grilla, GrillaEsqueleto, type Rendimientos } from './Grilla'
 import { Resumen, ResumenEsqueleto } from './Resumen'
 import { TarjetaFidel } from './TarjetaFidel'
-import { useEsEscritorio } from './useMedia'
+import { useEsEscritorio } from '@/lib/useMedia'
 
 const ruta = getRouteApi('/')
 const SIN_OCULTAR: readonly Tipo[] = []
@@ -80,6 +80,8 @@ export function CalendarioView() {
   const cambiarMes = (m: string) => ir({ mes: m, dia: undefined, item: undefined })
 
   // Móvil: deslizar a los lados cambia de mes (los botones siguen siendo la vía con teclado).
+  // Si hubo arrastre, el click que suelta el dedo sobre un día no lo elige.
+  const arrastrando = useRef(false)
   const alSoltar = (_: unknown, info: PanInfo) => {
     const { offset, velocity } = info
     if (Math.abs(offset.x) < Math.abs(offset.y)) return
@@ -129,7 +131,18 @@ export function CalendarioView() {
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.18}
             dragSnapToOrigin
+            onDragStart={() => {
+              arrastrando.current = true
+            }}
             onDragEnd={alSoltar}
+            onPointerDownCapture={() => {
+              arrastrando.current = false
+            }}
+            onClickCapture={(e) => {
+              if (!arrastrando.current) return
+              e.stopPropagation()
+              e.preventDefault()
+            }}
             className="touch-pan-y"
           >
             <Grilla

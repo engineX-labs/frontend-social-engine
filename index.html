@@ -30,11 +30,12 @@
     <link rel="preload" href="/fonts/PlusJakartaSans-800.woff2" as="font" type="font/woff2" crossorigin />
     <style>
       /* Pantalla de arranque: se ve mientras cargan el código y los datos; React la reemplaza. */
-      html {
+      /* Solo mientras está la pantalla de arranque: después manda el tema de la app. */
+      html:has(.arranque) {
         background: #f4f4f2;
       }
       @media (prefers-color-scheme: dark) {
-        html {
+        html:has(.arranque) {
           background: #0e1116;
         }
       }

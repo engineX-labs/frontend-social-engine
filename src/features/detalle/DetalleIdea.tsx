@@ -13,7 +13,6 @@ const SALIDA_EXPO = [0.22, 1, 0.36, 1] as const
 export function DetalleIdea({ idea }: { idea: Idea }) {
   const [i, setI] = useState(0)
   const [copiado, setCopiado] = useState(false)
-  const [falloCopia, setFalloCopia] = useState(false)
   const timer = useRef<number>(undefined)
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
@@ -24,17 +23,14 @@ export function DetalleIdea({ idea }: { idea: Idea }) {
     try {
       await navigator.clipboard.writeText(copy)
       setCopiado(true)
-      setFalloCopia(false)
       toast.success('Copy copiado. Pegalo en Instagram.')
     } catch {
       setCopiado(false)
-      setFalloCopia(true)
       toast.error('No pudimos copiarlo. Seleccioná el texto y copialo a mano.')
     }
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
       setCopiado(false)
-      setFalloCopia(false)
     }, 2000)
   }
 
@@ -117,9 +113,6 @@ export function DetalleIdea({ idea }: { idea: Idea }) {
               Otra propuesta
             </Boton>
           )}
-          <span role="status" className="sr-only">
-            {copiado ? 'Copiado' : falloCopia ? 'No pudimos copiarlo, seleccionalo a mano.' : ''}
-          </span>
         </div>
       </VozFidel>
 

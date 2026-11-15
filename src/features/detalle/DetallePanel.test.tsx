@@ -60,7 +60,7 @@ describe('DetallePanel', () => {
     await montar('/?item=idea-1')
     const d = within(await panel())
     await user.click(await d.findByRole('button', { name: 'Copiar copy' }))
-    expect(await d.findByText('Copiado')).toBeInTheDocument()
+    expect(await screen.findByText(/Copy copiado/)).toBeInTheDocument()
     expect(await navigator.clipboard.readText()).toMatch(/Cinco looks/)
   })
 

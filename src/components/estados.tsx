@@ -1,15 +1,6 @@
-import { AlertCircle, Loader2, RotateCw } from 'lucide-react'
+import { AlertCircle, RotateCw } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Boton } from './ui/Boton'
-
-export function EstadoCarga({ texto = 'Cargando…' }: { texto?: string }) {
-  return (
-    <div role="status" className="flex items-center gap-2 p-6 text-sm text-muted">
-      <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-      {texto}
-    </div>
-  )
-}
 
 export function EstadoError({
   mensaje = 'No pudimos cargar esto.',

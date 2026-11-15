@@ -4,7 +4,7 @@ import { Portada } from '@/components/Portada'
 import type { Item } from '@/domain/types'
 import { hora } from '@/lib/fecha'
 import { mayuscula, nombreDia } from './agrupar'
-import { fmtNum } from './formato'
+import { num } from '@/lib/formato'
 import type { Rendimientos } from './Grilla'
 import { IndicadorRendimiento } from './Rendimiento'
 
@@ -73,7 +73,7 @@ export function Agenda({ dia, hoy, items, rendimientos, ocultas, onItem }: Props
                     {it.tipo === 'publicada' && (
                       <span className="flex items-center gap-2 text-xs">
                         <span>
-                          <b className="cifra font-bold">{fmtNum(it.alcance)}</b>{' '}
+                          <b className="cifra font-bold">{num(it.alcance)}</b>{' '}
                           <span className="text-muted">de alcance</span>
                         </span>
                         {rendimiento && <IndicadorRendimiento rendimiento={rendimiento} conTexto />}

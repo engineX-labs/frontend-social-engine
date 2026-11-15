@@ -61,7 +61,7 @@ export function BarraMes({ mes, ocultar, cuentas, onMes, onHoy, onFiltro }: Prop
                 'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold select-none sm:min-h-9 sm:flex-none',
                 'transition-[background-color,color,box-shadow,transform] duration-(--dur-fast) ease-brand active:scale-[0.97] active:duration-(--dur-press)',
                 visible
-                  ? 'bg-raised text-ink shadow-[0_1px_3px_#0e111629]'
+                  ? 'bg-raised text-ink shadow-card ring-1 ring-hairline'
                   : 'text-muted hover:text-ink',
               )}
             >

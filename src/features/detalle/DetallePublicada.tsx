@@ -6,7 +6,7 @@ import type { Publicada, ResumenMetricas } from '@/domain/types'
 import { diaCorto, hora } from '@/lib/fecha'
 import { cn } from '@/lib/utils'
 import { Campo, Seccion, VozFidel } from './Cabecera'
-import { num, textoRazon } from './formato'
+import { num, textoRazon } from '@/lib/formato'
 
 const TONO = {
   sube: { clase: 'bg-success/15 text-success', Icono: ArrowUpRight },
@@ -51,10 +51,13 @@ export function DetallePublicada({
   pub,
   rendimiento,
   resumen,
+  totalMes,
 }: {
   pub: Publicada
   rendimiento: PublicadaConRendimiento | null
   resumen: ResumenMetricas | null
+  /** Publicadas del mes, base del puesto. */
+  totalMes: number
 }) {
   const max = Math.max(pub.alcance, resumen?.medianaAlcance ?? 0)
   const tono = rendimiento ? TONO[rendimiento.clase] : null
@@ -87,7 +90,7 @@ export function DetallePublicada({
                 {textoRazon(rendimiento.razon)}
               </span>
               <p className="text-[13px] text-muted">
-                Puesto {rendimiento.puesto} de tus últimas {resumen.cantidad}
+                Puesto {rendimiento.puesto} de {totalMes} del mes
               </p>
             </div>
           ) : (
@@ -109,7 +112,7 @@ export function DetallePublicada({
       </dl>
 
       {resumen && (
-        <Seccion titulo="Contra tu mediana del mes">
+        <Seccion titulo="Contra tu mediana de alcance">
           <div className="space-y-2.5">
             <Barra etiqueta="Esta" valor={pub.alcance} max={max} />
             <Barra etiqueta="Tu mediana" valor={resumen.medianaAlcance} max={max} referencia />

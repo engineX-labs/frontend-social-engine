@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion, useDragControls, type PanInfo } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { calendarioQuery, useItem } from '@/api/calendario'
 import { ApiError } from '@/api/http'
 import { EstadoError } from '@/components/estados'
@@ -13,6 +13,7 @@ import { botonClases } from '@/components/ui/boton-clases'
 import { Esqueleto } from '@/components/ui/Esqueleto'
 import { conRendimiento } from '@/domain/metrics'
 import { diaLargo } from '@/lib/fecha'
+import { useMedia } from '@/lib/useMedia'
 import { DetalleIdea } from './DetalleIdea'
 import { DetallePublicada } from './DetallePublicada'
 import { mesDe } from './formato'
@@ -30,23 +31,11 @@ export function DetallePanel() {
   return <AnimatePresence>{item ? <Panel key="detalle" id={item} /> : null}</AnimatePresence>
 }
 
-function useMedia(consulta: string) {
-  const [coincide, setCoincide] = useState(() => Boolean(window.matchMedia?.(consulta).matches))
-  useEffect(() => {
-    const mq = window.matchMedia?.(consulta)
-    if (!mq) return
-    const fn = () => setCoincide(mq.matches)
-    mq.addEventListener('change', fn)
-    return () => mq.removeEventListener('change', fn)
-  }, [consulta])
-  return coincide
-}
-
 function Panel({ id }: { id: string }) {
   const navigate = ruta.useNavigate()
   // Con scrim (<1100px) el panel es modal; en escritorio ancho convive con la grilla.
-  const modal = !useMedia('(min-width: 1100px)')
-  const lateral = useMedia('(min-width: 820px)')
+  const modal = !useMedia('(min-width: 1100px)', false)
+  const lateral = useMedia('(min-width: 820px)', false)
   const arrastre = useDragControls()
   const cerrarRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
@@ -200,6 +189,7 @@ function Panel({ id }: { id: string }) {
               pub={item}
               rendimiento={rendimiento}
               resumen={calQ.data?.resumen ?? null}
+              totalMes={calQ.data?.publicadas.length ?? 0}
             />
           ) : (
             <DetalleIdea key={item.id} idea={item} />
