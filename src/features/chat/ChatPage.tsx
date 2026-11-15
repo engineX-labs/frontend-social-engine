@@ -1,63 +1,18 @@
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { EstadoError } from '@/components/estados'
+import { Bienvenida } from './Bienvenida'
 import { Composer } from './Composer'
 import { ContextoChip } from './ContextoChip'
-import { TextoFidel } from './TextoFidel'
+import { Mensaje } from './Mensaje'
 import { useChat } from './useChat'
-import type { MensajeChat } from './tipos'
 
 const ruta = getRouteApi('/chat')
 
-const SUGERENCIAS = [
-  '¿Qué publiqué mejor este mes?',
-  '¿A qué hora me conviene publicar?',
-  '¿Qué formato me rinde más?',
-]
-
-const AVATAR =
-  'grid size-7 shrink-0 place-items-center rounded-full bg-[image:var(--brand-gradient)] text-xs font-extrabold text-on-accent'
-
-function Escribiendo() {
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted" role="status">
-      <span className="flex gap-1" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="size-1.5 animate-bounce rounded-full bg-muted motion-reduce:animate-none"
-            style={{ animationDelay: `${i * 120}ms` }}
-          />
-        ))}
-      </span>
-      Fidel está escribiendo…
-    </div>
-  )
-}
-
-function Burbuja({ m, enCurso }: { m: MensajeChat; enCurso: boolean }) {
-  if (m.rol === 'usuario')
-    return (
-      <div className="flex justify-end">
-        <p className="max-w-[85%] whitespace-pre-wrap break-words rounded-xl rounded-br-sm border border-line bg-raised px-4 py-2.5">
-          {m.texto}
-        </p>
-      </div>
-    )
-  return (
-    <div className="flex gap-3">
-      <span className={AVATAR} aria-hidden="true">
-        F
-      </span>
-      <div className="min-w-0 flex-1 space-y-2 pt-0.5">
-        <span className="sr-only">Fidel: </span>
-        {m.texto && <TextoFidel texto={m.texto} enCurso={enCurso} />}
-        {m.estado === 'detenido' && <p className="text-xs text-muted">Detuviste la respuesta.</p>}
-      </div>
-    </div>
-  )
-}
+/** A menos de esto del final se considera que el usuario está abajo. */
+const CERCA_PX = 80
 
 export function ChatPage() {
   const { item } = ruta.useSearch()
@@ -70,8 +25,23 @@ export function ChatPage() {
   const ultimo = mensajes.at(-1)
   const fallo = ultimo?.rol === 'fidel' && ultimo.estado === 'error' ? ultimo : null
 
+  // El chat ocupa justo lo que queda bajo la barra superior. Se mide dónde empieza en vez de
+  // confiar en un número: si la barra cambia de alto no aparece un scroll doble.
+  const seccion = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    const el = seccion.current
+    if (!el) return
+    const medir = () =>
+      el.style.setProperty('--chat-top', `${el.getBoundingClientRect().top + window.scrollY}px`)
+    medir()
+    window.addEventListener('resize', medir)
+    return () => window.removeEventListener('resize', medir)
+  }, [])
+
   // Seguir al último mensaje solo si el usuario está al final; si subió a leer, no se lo pelea.
   const lista = useRef<HTMLDivElement>(null)
+  const contenido = useRef<HTMLDivElement>(null)
+  const pie = useRef<HTMLDivElement>(null)
   const pegado = useRef(true)
   const [lejos, setLejos] = useState(false)
   const alFondo = useCallback(() => {
@@ -83,18 +53,32 @@ export function ChatPage() {
   function alScrollear() {
     const el = lista.current
     if (!el) return
-    const cerca = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    const cerca = el.scrollHeight - el.scrollTop - el.clientHeight < CERCA_PX
     pegado.current = cerca
     setLejos(!cerca)
   }
   useEffect(() => {
     if (pegado.current) alFondo()
   }, [mensajes, estado, alFondo])
+  // También cuando cambia el alto sin que cambien los mensajes: el campo crece al escribir,
+  // llega una tarjeta, gira el teléfono.
+  useEffect(() => {
+    if (typeof ResizeObserver !== 'function') return
+    const ro = new ResizeObserver(() => {
+      const el = lista.current
+      if (el && pegado.current) el.scrollTop = el.scrollHeight
+    })
+    for (const el of [contenido.current, pie.current]) if (el) ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
-  function alEnviar(texto: string) {
-    pegado.current = true
-    return enviar(texto)
-  }
+  const alEnviar = useCallback(
+    (texto: string) => {
+      pegado.current = true
+      return enviar(texto)
+    },
+    [enviar],
+  )
   function quitarContexto() {
     setQuitado(item)
     void navegar({ to: '/chat', search: {}, replace: true })
@@ -102,57 +86,34 @@ export function ChatPage() {
 
   return (
     <section
+      ref={seccion}
       aria-label="Chat con Fidel"
-      className="mx-auto flex h-[calc(100dvh-11rem-env(safe-area-inset-bottom))] w-full max-w-3xl flex-col md:h-[calc(100dvh-8.5rem)]"
+      // Sale del padding del layout: arranca pegado a la barra superior y termina sobre la barra
+      // inferior (móvil, ≈64px + safe-area) o al borde de la ventana (escritorio).
+      className="-mt-5 -mb-6 flex h-[calc(100dvh-var(--chat-top,57px)-4rem-env(safe-area-inset-bottom))] flex-col md:-mb-12 md:h-[calc(100dvh-var(--chat-top,57px))]"
     >
       <h1 className="sr-only">Fidel</h1>
-      <div className="relative min-h-0 flex-1">
+      <div
+        ref={lista}
+        onScroll={alScrollear}
+        className="-mx-4 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 sm:-mx-6 sm:px-6"
+      >
         <div
-          ref={lista}
-          onScroll={alScrollear}
+          ref={contenido}
           role="log"
           aria-live="polite"
           aria-busy={ocupado}
           aria-label="Conversación con Fidel"
           tabIndex={0}
-          className="h-full overflow-y-auto overscroll-contain px-1 py-4"
+          className="mx-auto w-full max-w-3xl flex-1 rounded-md pt-6 pb-6 -outline-offset-2"
         >
           {mensajes.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
-              <span className={`${AVATAR} size-12 text-xl`} aria-hidden="true">
-                F
-              </span>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-extrabold tracking-tight">Hola, soy Fidel</h2>
-                <p className="mx-auto max-w-sm text-muted">
-                  Miro cómo te fue en Instagram y te cuento qué conviene repetir. No publico ni
-                  cambio nada por vos.
-                </p>
-              </div>
-              <ul className="flex flex-wrap justify-center gap-2" aria-label="Preguntas sugeridas">
-                {SUGERENCIAS.map((s) => (
-                  <li key={s}>
-                    <button
-                      type="button"
-                      onClick={() => enviar(s)}
-                      className="rounded-full border border-line bg-raised px-4 py-2 text-sm font-semibold hover:border-line-strong"
-                    >
-                      {s}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Bienvenida onElegir={alEnviar} />
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-6">
               {mensajes.map((m) => (
-                <Burbuja key={m.id} m={m} enCurso={m.estado === 'streaming'} />
+                <Mensaje key={m.id} m={m} />
               ))}
-              {estado === 'esperando' && (
-                <div className="pl-10">
-                  <Escribiendo />
-                </div>
-              )}
               {fallo && (
                 <div className="pl-10">
                   <EstadoError
@@ -164,20 +125,37 @@ export function ChatPage() {
             </div>
           )}
         </div>
-        {lejos && (
-          <button
-            type="button"
-            onClick={alFondo}
-            className="absolute bottom-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-line bg-raised px-3 py-1.5 text-xs font-semibold shadow-card"
-          >
-            <ArrowDown className="size-3.5" aria-hidden="true" />
-            Ir al final
-          </button>
-        )}
-      </div>
-      <div className="space-y-2 pb-1 pt-2">
-        {conItem && <ContextoChip itemId={conItem} onQuitar={quitarContexto} />}
-        <Composer ocupado={ocupado} onEnviar={alEnviar} onDetener={detener} />
+        {/* El composer queda pegado abajo dentro del scroll: la conversación pasa por debajo. */}
+        <div ref={pie} className="sticky bottom-0 z-10 mx-auto w-full max-w-3xl pb-2 md:pb-4">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-surface from-35% to-transparent md:h-8 md:from-50%"
+          />
+          <AnimatePresence>
+            {lejos && (
+              <motion.button
+                type="button"
+                onClick={alFondo}
+                aria-label="Ir al final"
+                initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.9 }}
+                transition={{ duration: 0.18, ease: [0.2, 0.7, 0.2, 1] }}
+                className="absolute bottom-full left-1/2 mb-3 -ml-[18px] grid size-9 place-items-center rounded-full border border-glass-line bg-glass text-ink shadow-pop backdrop-blur-xl before:absolute before:-inset-1.5 hover:border-line-strong"
+              >
+                <ArrowDown className="size-4" aria-hidden="true" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+          <div className="relative">
+            <Composer
+              ocupado={ocupado}
+              onEnviar={alEnviar}
+              onDetener={detener}
+              contexto={conItem && <ContextoChip itemId={conItem} onQuitar={quitarContexto} />}
+            />
+          </div>
+        </div>
       </div>
     </section>
   )
