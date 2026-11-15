@@ -18,10 +18,17 @@ const PROTAGONISTA =
 
 function Cifra({ valor, sufijo }: { valor: number; sufijo?: string }) {
   const n = useConteo(valor)
+  // El lector de pantalla oye el valor final, no la cuenta.
   return (
     <>
-      {fmtNum(n)}
-      {sufijo}
+      <span aria-hidden="true">
+        {fmtNum(n)}
+        {sufijo}
+      </span>
+      <span className="sr-only">
+        {fmtNum(valor)}
+        {sufijo}
+      </span>
     </>
   )
 }
@@ -84,7 +91,7 @@ export function Resumen({ datos, onItem }: { datos: CalendarioMes; onItem: (id: 
               </span>
               <span className="text-[13px] text-muted">de alcance</span>
             </span>
-            <span className="truncate text-sm font-semibold">Tu mejor publicación de {mes}</span>
+            <span className="truncate text-sm font-semibold">Tu mejor publicación del mes</span>
             <span className="flex min-w-0 items-center gap-2 text-xs text-muted">
               <IndicadorRendimiento
                 conTexto

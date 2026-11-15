@@ -1,5 +1,4 @@
 import { Portada } from '@/components/Portada'
-import { AvatarFidel } from '@/components/ui/AvatarFidel'
 import { Esqueleto } from '@/components/ui/Esqueleto'
 import type { ClaseRendimiento } from '@/domain/metrics'
 import type { Item } from '@/domain/types'
@@ -269,11 +268,7 @@ function Chip({
           {item.formato}
         </span>
       </span>
-      {publicada && rendimiento ? (
-        <IndicadorRendimiento rendimiento={rendimiento} />
-      ) : !publicada ? (
-        <AvatarFidel tamano="xs" className="size-3.5" />
-      ) : null}
+      {publicada && rendimiento && <IndicadorRendimiento rendimiento={rendimiento} />}
     </button>
   )
 }

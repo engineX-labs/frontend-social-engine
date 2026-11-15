@@ -38,7 +38,7 @@ export function Layout() {
     <div
       className={cn(
         'mx-auto min-h-dvh max-w-[1500px] px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] transition-[padding] duration-(--dur-base) ease-brand sm:px-6 md:pb-12',
-        conPanel && 'min-[1100px]:pr-[464px]',
+        conPanel && 'min-[1100px]:pr-[464px]!',
       )}
     >
       {/* Glass con propósito: la barra queda fija y el contenido pasa por debajo. */}
@@ -68,14 +68,14 @@ export function Layout() {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex min-w-0 items-center gap-2">
           {USAR_MOCKS && (
             <p
-              className="flex min-h-9 items-center gap-2 rounded-full border border-hairline bg-raised py-1 pr-1.5 pl-3 text-[13px] font-semibold"
+              className="flex min-h-9 min-w-0 items-center gap-2 rounded-full border border-hairline bg-raised py-1 pr-1.5 pl-3 text-[13px] font-semibold"
               title="Estás viendo datos de ejemplo"
             >
-              <IconoInstagram className="size-3.5 text-muted" />
-              <span className="max-w-28 truncate sm:max-w-none">{CUENTA_DEMO.comercio}</span>
+              <IconoInstagram className="hidden size-3.5 text-muted min-[400px]:block" />
+              <span className="max-w-24 truncate sm:max-w-none">{CUENTA_DEMO.comercio}</span>
               <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold tracking-wide text-accent-ink">
                 Demo
               </span>

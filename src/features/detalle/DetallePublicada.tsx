@@ -87,7 +87,7 @@ export function DetallePublicada({
                 {textoRazon(rendimiento.razon)}
               </span>
               <p className="text-[13px] text-muted">
-                Puesto {rendimiento.puesto} de {resumen.cantidad} del mes
+                Puesto {rendimiento.puesto} de tus últimas {resumen.cantidad}
               </p>
             </div>
           ) : (

@@ -45,7 +45,7 @@ export function DetalleIdea({ idea }: { idea: Idea }) {
         <Campo etiqueta="Formato">{idea.formato}</Campo>
         <div className="col-span-2">
           <Campo etiqueta="Día y hora sugeridos">
-            <span className="cifra first-letter:uppercase">{cuando(idea.fecha)}</span>
+            <span className="cifra inline-block first-letter:uppercase">{cuando(idea.fecha)}</span>
           </Campo>
         </div>
       </dl>
