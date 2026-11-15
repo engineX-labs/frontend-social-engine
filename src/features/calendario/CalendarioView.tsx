@@ -13,16 +13,23 @@ import { BarraMes } from './BarraMes'
 import { Grilla, GrillaEsqueleto, type Rendimientos } from './Grilla'
 import { Resumen, ResumenEsqueleto } from './Resumen'
 import { TarjetaFidel } from './TarjetaFidel'
+import { useAncho } from '@/lib/useAncho'
 import { useEsEscritorio } from '@/lib/useMedia'
 
 const ruta = getRouteApi('/')
 const SIN_OCULTAR: readonly Tipo[] = []
+/** Desde este ancho del calendario la grilla muestra chips; por debajo, puntos y agenda. */
+const ANCHO_GRILLA = 720
 
 /** Calendario mensual. Todo el estado (mes, día, ítem abierto, filtros) vive en la URL. */
 export function CalendarioView() {
   const search = ruta.useSearch()
   const navigate = ruta.useNavigate()
-  const escritorio = useEsEscritorio()
+  // La grilla con chips necesita ancho: depende del espacio que deja la barra de Fidel,
+  // no solo de la pantalla.
+  const seccion = useRef<HTMLElement>(null)
+  const ancho = useAncho(seccion)
+  const escritorio = useEsEscritorio() && (ancho === null || ancho >= ANCHO_GRILLA)
 
   const [ahora, setAhora] = useState(() => new Date())
   useEffect(() => {
@@ -90,7 +97,7 @@ export function CalendarioView() {
   }
 
   return (
-    <section aria-label="Calendario" className="flex flex-col gap-4">
+    <section ref={seccion} aria-label="Calendario" className="@container flex flex-col gap-4">
       <h1 className="sr-only">Calendario</h1>
       <BarraMes
         mes={mes}

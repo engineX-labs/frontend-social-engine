@@ -47,7 +47,7 @@ export function BarraMes({ mes, ocultar, cuentas, onMes, onHoy, onFiltro }: Prop
       <div
         role="group"
         aria-label="Filtrar por tipo"
-        className="flex w-full gap-1 rounded-lg bg-inset p-1 sm:w-auto"
+        className="flex w-full gap-1 rounded-lg bg-inset p-1 @min-[560px]:w-auto"
       >
         {FILTROS.map(({ tipo, texto }) => {
           const visible = !ocultar.includes(tipo)
@@ -58,7 +58,7 @@ export function BarraMes({ mes, ocultar, cuentas, onMes, onHoy, onFiltro }: Prop
               aria-pressed={visible}
               onClick={() => onFiltro(tipo)}
               className={cn(
-                'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold select-none sm:min-h-9 sm:flex-none',
+                'inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold select-none @min-[560px]:min-h-9 @min-[560px]:flex-none',
                 'transition-[background-color,color,box-shadow,transform] duration-(--dur-fast) ease-brand active:scale-[0.97] active:duration-(--dur-press)',
                 visible
                   ? 'bg-raised text-ink shadow-card ring-1 ring-hairline'

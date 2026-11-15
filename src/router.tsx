@@ -1,9 +1,4 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  lazyRouteComponent,
-} from '@tanstack/react-router'
+import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router'
 import { Layout } from '@/app/Layout'
 import { validarCalendarioSearch, validarChatSearch } from '@/app/search'
 import { CalendarioView } from '@/features/calendario/CalendarioView'
@@ -28,8 +23,10 @@ const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/chat',
   validateSearch: validarChatSearch,
-  // El chat se descarga al entrar (o al pasar el cursor por el enlace): la primera carga pesa menos.
-  component: lazyRouteComponent(() => import('@/features/chat/ChatPage'), 'ChatPage'),
+  // Fidel ya no es una pantalla: vive en la barra lateral del calendario.
+  beforeLoad: ({ search }) => {
+    throw redirect({ to: '/', search: { sobre: search.item, fidel: 'abierto' }, replace: true })
+  },
 })
 
 const routeTree = rootRoute.addChildren([calendarioRoute, chatRoute])

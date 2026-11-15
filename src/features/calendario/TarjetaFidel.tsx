@@ -19,7 +19,7 @@ export function TarjetaFidel({ ideas, onVer }: { ideas: Idea[]; onVer: (id: stri
   return (
     <aside
       aria-label="Sugerencia de Fidel"
-      className="flex animate-aparecer flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-fidel-soft p-3 min-[820px]:pl-4"
+      className="flex animate-aparecer flex-wrap items-center gap-x-4 gap-y-3 rounded-lg bg-fidel-soft p-3 @min-[720px]:pl-4"
     >
       <div className="flex min-w-0 flex-1 basis-72 items-center gap-3">
         <AvatarFidel tamano="md" />
@@ -33,11 +33,20 @@ export function TarjetaFidel({ ideas, onVer }: { ideas: Idea[]; onVer: (id: stri
           </span>
         </p>
       </div>
-      <div className="flex gap-2 max-[819px]:w-full">
-        <Boton variante="primario" className="max-[819px]:flex-1" onClick={() => onVer(primera.id)}>
+      <div className="flex gap-2 @max-[719px]:w-full">
+        <Boton
+          variante="primario"
+          className="@max-[719px]:flex-1"
+          onClick={() => onVer(primera.id)}
+        >
           Ver idea
         </Boton>
-        <Link to="/chat" className={botonClases({ className: 'max-[819px]:flex-1' })}>
+        <Link
+          to="/"
+          search={(prev) => ({ ...prev, fidel: 'abierto' })}
+          resetScroll={false}
+          className={botonClases({ className: '@max-[719px]:flex-1' })}
+        >
           Hablar con Fidel
         </Link>
       </div>

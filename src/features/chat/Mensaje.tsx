@@ -16,7 +16,7 @@ export const Mensaje = memo(function Mensaje({ m }: { m: MensajeChat }) {
   if (m.rol === 'usuario')
     return (
       <div className={`flex justify-end ${ENTRADA}`}>
-        <p className="max-w-[85%] rounded-xl rounded-br-sm border border-accent/25 bg-accent-soft px-4 py-2.5 leading-6 break-words whitespace-pre-wrap sm:max-w-[75%]">
+        <p className="max-w-[85%] rounded-xl rounded-br-sm border border-accent/25 bg-accent-soft px-4 py-2.5 leading-6 break-words whitespace-pre-wrap">
           <span className="sr-only">Vos: </span>
           {m.texto}
         </p>

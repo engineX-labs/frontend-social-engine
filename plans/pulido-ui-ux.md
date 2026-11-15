@@ -69,6 +69,27 @@ Es un pulido, no un rediseño: se mantienen la identidad de engine.nlabs.com.ar 
 - **Modo claro a la par:** revisar cada pantalla en claro y medir contraste (AA) en ambos temas.
 - **Pendientes heredados de la fase 7:** prueba en celular real (teclado de iOS, `dvh`, gestos) y panel en móvil.
 
+### Bloque F · Fidel como barra lateral (agregado antes de entregar)
+
+Pedido: un solo dashboard (el calendario) y Fidel en una barra lateral a la izquierda que se abre y se pliega, en vez de una sección aparte con botón arriba.
+
+- **Un solo dashboard:** se va la navegación «Calendario / Fidel» de la barra superior y la barra inferior del móvil. La ruta `/chat` deja de existir como pantalla: redirige a `/` con el chat abierto (los enlaces viejos siguen andando).
+- **Escritorio (≥1024px):** barra lateral izquierda con el chat completo.
+  - **Plegada:** un riel angosto (~64px) con el avatar de Fidel y su estado. Un clic, o el atajo de teclado, la abre.
+  - **Abierta:** el ancho se ajusta arrastrando el borde (mín. ~320px, máx. ~560px), con alternativa de teclado: flechas sobre el borde y doble clic para el ancho por defecto.
+  - **Memoria:** se recuerda en este navegador si estaba abierta o plegada y su ancho.
+  - **Animación:** al abrir o plegar, el calendario se reacomoda con una transición suave; respeta «reducir movimiento».
+- **Móvil (<1024px):** botón flotante con el avatar de Fidel. Abre el chat como hoja desde abajo, casi a pantalla completa, y se cierra deslizando o con Escape, igual que el panel de detalle.
+- **La conversación no se pierde** al plegar o cerrar: vive en la barra, no en una pantalla.
+- **Contexto:**
+  - «Preguntarle a Fidel» (panel de detalle) y «Hablar con Fidel» (tarjeta de Fidel) abren la barra con la publicación como contexto. El chip «Preguntando sobre…» queda igual.
+  - Las tarjetas de publicación del chat abren el detalle en el calendario de al lado.
+- **Convivencia con el detalle:** con pantalla ancha (≥1440px) entran chat, calendario y detalle. Entre 1024 y 1440px el detalle se abre encima del calendario con fondo oscuro y el chat se queda donde está.
+- **Calendario:** se adapta al ancho que le queda. Con el chat abierto y poco espacio, la grilla mantiene los chips mientras entren; si no entran, pasa a la vista de puntos y agenda.
+- **Tests:**
+  - Se adaptan los del chat (hoy montan `/chat`) sin cambiar su intención.
+  - Se suman: abrir y plegar, ajuste de ancho con teclado, contexto desde el detalle y redirección de `/chat`.
+
 ## Decisiones (aprobadas las cuatro)
 
 1. **Librería de animación:** sumar `motion` (Framer Motion) para el spring del panel, arrastrar para cerrar, cambio de mes y cruces. El resto, con CSS. Alternativa: solo CSS, sin gestos de arrastre.

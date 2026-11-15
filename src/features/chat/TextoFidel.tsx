@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { destinoCalendario, ENLACE, textoVisible } from './citas'
+import { useFidelOpcional } from './contexto'
 
 /**
  * Cursor de escritura. Ocupa cero de ancho: nunca empuja una palabra a la línea siguiente,
@@ -19,6 +20,7 @@ function Cursor() {
  * todo lo demás se muestra como texto plano (sin HTML).
  */
 export function TextoFidel({ texto, enCurso }: { texto: string; enCurso?: boolean }) {
+  const fidel = useFidelOpcional()
   const visible = textoVisible(texto, enCurso)
   const partes: ReactNode[] = []
   let desde = 0
@@ -30,7 +32,8 @@ export function TextoFidel({ texto, enCurso }: { texto: string; enCurso?: boolea
         <Link
           key={m.index}
           to="/"
-          search={cita}
+          search={(prev) => ({ ...prev, ...cita })}
+          onClick={fidel?.alCitar}
           className="rounded-sm font-semibold text-accent-ink underline decoration-accent-ink/40 underline-offset-4 transition-colors duration-(--dur-fast) hover:decoration-accent-ink"
         >
           {m[1]}

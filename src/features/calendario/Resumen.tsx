@@ -13,9 +13,9 @@ import { IndicadorRendimiento } from './Rendimiento'
 import { useConteo } from './useConteo'
 
 const FRANJA =
-  'grid grid-cols-3 overflow-hidden rounded-lg border border-line bg-raised shadow-card min-[820px]:grid-cols-[minmax(0,1.7fr)_repeat(3,minmax(0,1fr))]'
+  'grid grid-cols-3 overflow-hidden rounded-lg border border-line bg-raised shadow-card @min-[720px]:grid-cols-[minmax(0,1.7fr)_repeat(3,minmax(0,1fr))]'
 const PROTAGONISTA =
-  'col-span-3 flex min-h-24 items-center gap-3 border-b border-line p-3 text-left min-[820px]:col-span-1 min-[820px]:gap-4 min-[820px]:border-r min-[820px]:border-b-0 min-[820px]:p-4'
+  'col-span-3 flex min-h-24 items-center gap-3 border-b border-line p-3 text-left @min-[720px]:col-span-1 @min-[720px]:gap-4 @min-[720px]:border-r @min-[720px]:border-b-0 @min-[720px]:p-4'
 
 function Cifra({ valor, sufijo }: { valor: number; sufijo?: string }) {
   const n = useConteo(valor)
@@ -44,7 +44,7 @@ function Dato({
   children: ReactNode
 }) {
   return (
-    <div className="flex min-w-0 flex-col-reverse justify-end gap-0.5 border-l border-line p-3 first:border-l-0 min-[820px]:justify-center min-[820px]:px-5 min-[820px]:first:border-l">
+    <div className="flex min-w-0 flex-col-reverse justify-end gap-0.5 border-l border-line p-3 first:border-l-0 @min-[720px]:justify-center @min-[720px]:px-5 @min-[720px]:first:border-l">
       <dt className="text-[13px] leading-snug">
         <span className="font-semibold">{etiqueta}</span>
         <span className="block text-xs text-muted">{nota}</span>
@@ -82,12 +82,12 @@ export function Resumen({ datos, onItem }: { datos: CalendarioMes; onItem: (id: 
             'group transition-colors duration-(--dur-fast) ease-brand hover:bg-inset/60 active:bg-inset',
           )}
         >
-          <span className="aspect-[4/5] w-12 shrink-0 overflow-hidden rounded-md min-[820px]:w-14">
+          <span className="aspect-[4/5] w-12 shrink-0 overflow-hidden rounded-md @min-[720px]:w-14">
             <Portada url={mejor.portadaUrl} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="flex flex-wrap items-baseline gap-x-2">
-              <span className="cifra text-3xl leading-none font-extrabold tracking-tight min-[820px]:text-4xl">
+              <span className="cifra text-3xl leading-none font-extrabold tracking-tight @min-[720px]:text-4xl">
                 <Cifra valor={mejor.alcance} />
               </span>
               <span className="text-[13px] text-muted">de alcance</span>
@@ -139,7 +139,7 @@ export function ResumenEsqueleto() {
   return (
     <div className={FRANJA}>
       <div className={PROTAGONISTA}>
-        <Esqueleto className="aspect-[4/5] w-12 min-[820px]:w-14" />
+        <Esqueleto className="aspect-[4/5] w-12 @min-[720px]:w-14" />
         <span className="flex flex-1 flex-col gap-2">
           <Esqueleto className="h-8 w-28" />
           <Esqueleto className="h-3.5 w-44 max-w-full" />
@@ -148,7 +148,7 @@ export function ResumenEsqueleto() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="flex flex-col justify-center gap-2 border-l border-line p-3 first:border-l-0 min-[820px]:px-5 min-[820px]:first:border-l"
+          className="flex flex-col justify-center gap-2 border-l border-line p-3 first:border-l-0 @min-[720px]:px-5 @min-[720px]:first:border-l"
         >
           <Esqueleto className="h-6 w-12" />
           <Esqueleto className="h-3.5 w-20 max-w-full" />

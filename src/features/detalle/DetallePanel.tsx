@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi, Link } from '@tanstack/react-router'
+import { getRouteApi } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion, useDragControls, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useRef } from 'react'
@@ -9,10 +9,10 @@ import { EstadoError } from '@/components/estados'
 import { EtiquetaTipo } from '@/components/EtiquetaTipo'
 import { AvatarFidel } from '@/components/ui/AvatarFidel'
 import { Boton } from '@/components/ui/Boton'
-import { botonClases } from '@/components/ui/boton-clases'
 import { Esqueleto } from '@/components/ui/Esqueleto'
 import { conRendimiento } from '@/domain/metrics'
 import { diaLargo } from '@/lib/fecha'
+import { atraparTab } from '@/lib/foco'
 import { useMedia } from '@/lib/useMedia'
 import { DetalleIdea } from './DetalleIdea'
 import { DetallePublicada } from './DetallePublicada'
@@ -33,8 +33,8 @@ export function DetallePanel() {
 
 function Panel({ id }: { id: string }) {
   const navigate = ruta.useNavigate()
-  // Con scrim (<1100px) el panel es modal; en escritorio ancho convive con la grilla.
-  const modal = !useMedia('(min-width: 1100px)', false)
+  // Con scrim (<1440px) el panel es modal; en escritorio ancho convive con la grilla.
+  const modal = !useMedia('(min-width: 1440px)', false)
   const lateral = useMedia('(min-width: 820px)', false)
   const arrastre = useDragControls()
   const cerrarRef = useRef<HTMLButtonElement>(null)
@@ -59,28 +59,8 @@ function Panel({ id }: { id: string }) {
     cerrarRef.current?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') cerrarEstable.current()
-      if (e.key !== 'Tab' || window.matchMedia?.('(min-width: 1100px)').matches) return
-      const panel = panelRef.current
-      if (!panel) return
-      const foco = Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => el.offsetParent !== null || el === document.activeElement)
-      const primero = foco[0]
-      const ultimo = foco[foco.length - 1]
-      if (!primero || !ultimo) return
-      const activo = document.activeElement
-      if (!panel.contains(activo)) {
-        e.preventDefault()
-        primero.focus()
-      } else if (e.shiftKey && activo === primero) {
-        e.preventDefault()
-        ultimo.focus()
-      } else if (!e.shiftKey && activo === ultimo) {
-        e.preventDefault()
-        primero.focus()
-      }
+      // Con scrim (<1440px) el panel es modal: Tab no sale de él.
+      if (!window.matchMedia?.('(min-width: 1440px)').matches) atraparTab(e, panelRef.current)
     }
     document.addEventListener('keydown', onKey)
     return () => {
@@ -116,7 +96,7 @@ function Panel({ id }: { id: string }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0, transition: SALIDA }}
         transition={{ duration: 0.24 }}
-        className="fixed inset-0 z-40 bg-scrim min-[1100px]:hidden"
+        className="fixed inset-0 z-40 bg-scrim min-[1440px]:hidden"
       />
       <motion.aside
         ref={panelRef}
@@ -198,14 +178,25 @@ function Panel({ id }: { id: string }) {
 
         {item && (
           <footer className="border-t border-hairline px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <Link
-              to="/chat"
-              search={{ item: item.id }}
-              className={botonClases({ variante: 'primario', className: 'w-full' })}
+            <Boton
+              variante="primario"
+              className="w-full"
+              onClick={() =>
+                void navigate({
+                  // Con el detalle como modal, se cierra para que Fidel quede a la vista.
+                  search: (prev) => ({
+                    ...prev,
+                    sobre: item.id,
+                    fidel: 'abierto',
+                    item: modal ? undefined : item.id,
+                  }),
+                  resetScroll: false,
+                })
+              }
             >
               <AvatarFidel tamano="xs" />
               Preguntarle a Fidel
-            </Link>
+            </Boton>
           </footer>
         )}
       </motion.aside>

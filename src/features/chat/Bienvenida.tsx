@@ -25,7 +25,7 @@ export function Bienvenida({ onElegir }: { onElegir: (pregunta: string) => void 
       variants={escalonado}
       initial="oculto"
       animate="visible"
-      className="flex min-h-full flex-col items-center justify-center gap-6 py-6 text-center"
+      className="flex min-h-full flex-col items-center justify-center gap-5 py-4 text-center"
     >
       {/* El único momento de autor: Fidel llega girando y deja un halo detrás. */}
       <div className="relative grid place-items-center">
@@ -46,24 +46,21 @@ export function Bienvenida({ onElegir }: { onElegir: (pregunta: string) => void 
         </motion.div>
       </div>
       <div className="space-y-2">
-        <motion.h2 variants={sube} className="text-2xl font-extrabold tracking-tight">
+        <motion.h2 variants={sube} className="text-xl font-extrabold tracking-tight">
           Hola, soy Fidel
         </motion.h2>
-        <motion.p variants={sube} className="mx-auto max-w-sm text-muted">
+        <motion.p variants={sube} className="mx-auto max-w-xs text-sm leading-relaxed text-muted">
           Miro cómo te fue en Instagram y te cuento qué conviene repetir. No publico ni cambio nada
           por vos.
         </motion.p>
       </div>
-      <ul
-        aria-label="Preguntas sugeridas"
-        className="grid w-full max-w-2xl gap-2 text-left sm:grid-cols-3"
-      >
+      <ul aria-label="Preguntas sugeridas" className="grid w-full max-w-md gap-2 text-left">
         {SUGERENCIAS.map(({ texto, Icono }) => (
           <motion.li key={texto} variants={sube}>
             <button
               type="button"
               onClick={() => onElegir(texto)}
-              className="group flex size-full min-h-14 items-center gap-3 rounded-lg border border-line bg-raised p-3 text-sm font-semibold shadow-card transition-[border-color,transform] duration-(--dur-fast) ease-brand hover:border-line-strong active:scale-[0.98] active:duration-(--dur-press) sm:flex-col sm:items-start sm:p-4"
+              className="group flex size-full min-h-14 items-center gap-3 rounded-lg border border-line bg-raised p-3 text-sm font-semibold shadow-card transition-[border-color,transform] duration-(--dur-fast) ease-brand hover:border-line-strong active:scale-[0.98] active:duration-(--dur-press)"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-md bg-accent-soft text-accent-ink">
                 <Icono className="size-4.5" aria-hidden="true" />

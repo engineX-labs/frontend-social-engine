@@ -1,42 +1,22 @@
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { EstadoError } from '@/components/estados'
 import { Bienvenida } from './Bienvenida'
 import { Composer } from './Composer'
 import { ContextoChip } from './ContextoChip'
 import { Mensaje } from './Mensaje'
-import { useChat } from './useChat'
-
-const ruta = getRouteApi('/chat')
+import { useFidel } from './contexto'
 
 /** A menos de esto del final se considera que el usuario está abajo. */
 const CERCA_PX = 80
 
-export function ChatPage() {
-  const { item } = ruta.useSearch()
-  const navegar = useNavigate()
-  // El chip se puede quitar; si llega otro `?item=`, vuelve a aparecer.
-  const [quitado, setQuitado] = useState<string>()
-  const conItem = item !== quitado ? item : undefined
-
-  const { mensajes, estado, ocupado, enviar, detener, reintentar } = useChat({ itemId: conItem })
+/** La conversación con Fidel. Llena el contenedor (barra lateral u hoja): lista con scroll y composer abajo. */
+export function Conversacion() {
+  const { chat, sobre, quitarSobre } = useFidel()
+  const { mensajes, estado, ocupado, enviar, detener, reintentar } = chat
   const ultimo = mensajes.at(-1)
   const fallo = ultimo?.rol === 'fidel' && ultimo.estado === 'error' ? ultimo : null
-
-  // El chat ocupa justo lo que queda bajo la barra superior. Se mide dónde empieza en vez de
-  // confiar en un número: si la barra cambia de alto no aparece un scroll doble.
-  const seccion = useRef<HTMLElement>(null)
-  useLayoutEffect(() => {
-    const el = seccion.current
-    if (!el) return
-    const medir = () =>
-      el.style.setProperty('--chat-top', `${el.getBoundingClientRect().top + window.scrollY}px`)
-    medir()
-    window.addEventListener('resize', medir)
-    return () => window.removeEventListener('resize', medir)
-  }, [])
 
   // Seguir al último mensaje solo si el usuario está al final; si subió a leer, no se lo pelea.
   const lista = useRef<HTMLDivElement>(null)
@@ -79,24 +59,12 @@ export function ChatPage() {
     },
     [enviar],
   )
-  function quitarContexto() {
-    setQuitado(item)
-    void navegar({ to: '/chat', search: {}, replace: true })
-  }
-
   return (
-    <section
-      ref={seccion}
-      aria-label="Chat con Fidel"
-      // Sale del padding del layout: arranca pegado a la barra superior y termina sobre la barra
-      // inferior (móvil, ≈64px + safe-area) o al borde de la ventana (escritorio).
-      className="-mt-5 -mb-6 flex h-[calc(100dvh-var(--chat-top,57px)-4rem-env(safe-area-inset-bottom))] flex-col md:-mb-12 md:h-[calc(100dvh-var(--chat-top,57px))]"
-    >
-      <h1 className="sr-only">Fidel</h1>
+    <div className="flex min-h-0 flex-1 flex-col">
       <div
         ref={lista}
         onScroll={alScrollear}
-        className="-mx-4 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 sm:-mx-6 sm:px-6"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4"
       >
         <div
           ref={contenido}
@@ -105,7 +73,7 @@ export function ChatPage() {
           aria-busy={ocupado}
           aria-label="Conversación con Fidel"
           tabIndex={0}
-          className="mx-auto w-full max-w-3xl flex-1 rounded-md pt-6 pb-6 -outline-offset-2"
+          className="w-full flex-1 rounded-md pt-4 pb-6 -outline-offset-2"
         >
           {mensajes.length === 0 ? (
             <Bienvenida onElegir={alEnviar} />
@@ -126,10 +94,10 @@ export function ChatPage() {
           )}
         </div>
         {/* El composer queda pegado abajo dentro del scroll: la conversación pasa por debajo. */}
-        <div ref={pie} className="sticky bottom-0 z-10 mx-auto w-full max-w-3xl pb-2 md:pb-4">
+        <div ref={pie} className="sticky bottom-0 z-10 w-full pb-3">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-linear-to-t from-surface from-35% to-transparent md:h-8 md:from-50%"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-(--fondo-chat,var(--surface)) from-50% to-transparent"
           />
           <AnimatePresence>
             {lejos && (
@@ -152,11 +120,11 @@ export function ChatPage() {
               ocupado={ocupado}
               onEnviar={alEnviar}
               onDetener={detener}
-              contexto={conItem && <ContextoChip itemId={conItem} onQuitar={quitarContexto} />}
+              contexto={sobre && <ContextoChip itemId={sobre} onQuitar={quitarSobre} />}
             />
           </div>
         </div>
       </div>
-    </section>
+    </div>
   )
 }

@@ -6,6 +6,7 @@ import { Esqueleto } from '@/components/ui/Esqueleto'
 import { claveMes, diaCorto, hora } from '@/lib/fecha'
 import { num } from '@/lib/formato'
 import type { Cita } from './citas'
+import { useFidelOpcional } from './contexto'
 
 /** Mismo alto en carga y con datos: la respuesta no salta cuando llega la publicación. */
 const CAJA = 'flex h-[4.5rem] w-full max-w-sm items-center gap-3 rounded-lg border p-2 pr-3'
@@ -17,6 +18,7 @@ const CAJA = 'flex h-[4.5rem] w-full max-w-sm items-center gap-3 rounded-lg bord
  */
 export function TarjetaPublicacion({ cita }: { cita: Cita }) {
   const { data, isError } = useItem(cita.item)
+  const fidel = useFidelOpcional()
   if (isError) return null
   if (!data)
     return (
@@ -34,7 +36,8 @@ export function TarjetaPublicacion({ cita }: { cita: Cita }) {
   return (
     <Link
       to="/"
-      search={{ item: data.id, mes: claveMes(data.fecha) }}
+      search={(prev) => ({ ...prev, item: data.id, mes: claveMes(data.fecha) })}
+      onClick={fidel?.alCitar}
       aria-label={
         publicada
           ? `${data.formato} del ${diaCorto(data.fecha)}, ${num(data.alcance)} de alcance. Abrir en el calendario`
