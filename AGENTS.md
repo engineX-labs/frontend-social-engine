@@ -27,6 +27,13 @@ Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`
 ## Datos y mocks
 
 - Sin `VITE_API_URL` la app usa datos de ejemplo (MSW, también en el build de producción: así funciona el demo en Vercel). Con `VITE_API_URL` (admite prefijo, p. ej. `https://api.x.com/v1`) habla con el backend real.
+- **Correr contra el backend local** (`.env.example` lista las variables; copiarlo a `.env.local`):
+  1. Backend (`backend-social-engine`, rama con `app/api/`): `docker compose up -d db`, `alembic upgrade head`, `uvicorn app.main:app --port 8000`, con `SUPABASE_JWT_SECRET` y `CORS_ORIGINS=http://localhost:5173` en su `.env`.
+  2. Alta del comercio y su cuenta de Zernio con `python -m app.admin crear-comercio` y `cargar-cuenta` (la key de Zernio se pide por teclado).
+  3. Token de desarrollo: `SUPABASE_JWT_SECRET=... node scripts/token-dev.mjs <uuid del usuario>` y pegarlo como `VITE_DEV_TOKEN` en `.env.local`.
+  4. `VITE_API_URL=http://localhost:8000` y `VITE_MOCK_CHAT=true`, y `npm run dev`.
+- Token: `src/api/auth.ts` es el único punto que lo obtiene (hoy `VITE_DEV_TOKEN` solo en `npm run dev`; el login de Supabase se enchufa ahí). `apiFetch` y `streamChat` mandan `Authorization: Bearer`.
+- Errores de la API: 401 ("tu sesión venció") y 403 ("tu usuario todavía no tiene un comercio asignado") no se reintentan ni ofrecen "Reintentar". `analisis` llega vacío hasta S3 y `ideas` vacías hasta S4; la UI lo tolera.
 - Contrato de chat (SSE): `POST /api/chat` con `{ mensajes: [{rol, texto}], itemId? }`; responde `text/event-stream` con `data: {"delta":"..."}` y `data: [DONE]`; errores a mitad de stream con `event: error`.
 
 ## Convenciones

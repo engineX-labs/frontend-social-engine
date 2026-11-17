@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { AnimatePresence, motion, useDragControls, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useRef } from 'react'
 import { calendarioQuery, useItem } from '@/api/calendario'
+import { esErrorDeAcceso, mensajeDeApi } from '@/api/errores'
 import { ApiError } from '@/api/http'
 import { EstadoError } from '@/components/estados'
 import { EtiquetaTipo } from '@/components/EtiquetaTipo'
@@ -159,9 +160,9 @@ function Panel({ id }: { id: string }) {
               mensaje={
                 itemQ.error instanceof ApiError && itemQ.error.status === 404
                   ? 'No encontramos este elemento. Puede que ya no exista.'
-                  : 'No pudimos cargar el detalle.'
+                  : mensajeDeApi(itemQ.error, 'No pudimos cargar el detalle.')
               }
-              onReintentar={() => void itemQ.refetch()}
+              onReintentar={esErrorDeAcceso(itemQ.error) ? undefined : () => void itemQ.refetch()}
             />
           ) : item.tipo === 'publicada' ? (
             <DetallePublicada

@@ -2,6 +2,7 @@ import { getRouteApi } from '@tanstack/react-router'
 import { motion, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendario } from '@/api/calendario'
+import { esErrorDeAcceso, mensajeDeApi } from '@/api/errores'
 import { EstadoError } from '@/components/estados'
 import type { CalendarioSearch } from '@/app/search'
 import { conRendimiento } from '@/domain/metrics'
@@ -42,7 +43,7 @@ export function CalendarioView() {
   const hoy = claveDia(ahora)
   const mes = search.mes ?? claveMes(ahora)
   const ocultar = search.ocultar ?? SIN_OCULTAR
-  const { data, isPending, isError, refetch } = useCalendario(mes)
+  const { data, error, isPending, isError, refetch } = useCalendario(mes)
 
   const ir = (cambio: Partial<CalendarioSearch>) =>
     void navigate({ search: (prev) => ({ ...prev, ...cambio }) })
@@ -115,8 +116,8 @@ export function CalendarioView() {
       )}
       {isError && (
         <EstadoError
-          mensaje="No pudimos cargar el calendario."
-          onReintentar={() => void refetch()}
+          mensaje={mensajeDeApi(error, 'No pudimos cargar el calendario.')}
+          onReintentar={esErrorDeAcceso(error) ? undefined : () => void refetch()}
         />
       )}
       {data && porDia && sinFiltros && (

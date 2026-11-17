@@ -180,6 +180,58 @@ describe('CalendarioView (escritorio)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(await screen.findByText(/todavía no tiene publicaciones/)).toBeInTheDocument()
   })
+
+  it('401: pide iniciar sesión y no ofrece reintentar', async () => {
+    server.use(
+      http.get('*/api/calendario', () =>
+        HttpResponse.json({ detalle: 'Falta iniciar sesión' }, { status: 401 }),
+      ),
+    )
+    montar('/?mes=2026-11')
+    expect(await screen.findByRole('alert')).toHaveTextContent(/sesión/i)
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull()
+  })
+
+  it('403: avisa que el usuario no tiene comercio y no ofrece reintentar', async () => {
+    server.use(
+      http.get('*/api/calendario', () =>
+        HttpResponse.json(
+          { detalle: 'Tu usuario todavía no tiene un comercio asignado' },
+          { status: 403 },
+        ),
+      ),
+    )
+    montar('/?mes=2026-11')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Tu usuario todavía no tiene un comercio asignado.',
+    )
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull()
+  })
+
+  it('con la respuesta real del backend (sin ideas, mes sin publicaciones) no se rompe', async () => {
+    server.use(
+      http.get('*/api/calendario', () =>
+        HttpResponse.json({
+          mes: '2026-11',
+          publicadas: [],
+          ideas: [],
+          resumen: {
+            cantidad: 0,
+            medianaAlcance: 0,
+            medianaPorFormato: {},
+            mejorHora: 19,
+            medianaNoche: null,
+            medianaResto: null,
+            mejorAlcance: 0,
+          },
+        }),
+      ),
+    )
+    montar('/?mes=2026-11')
+    expect(await screen.findByText(/todavía no tiene publicaciones/)).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByText(/Fidel te sugiere/)).toBeNull()
+  })
 })
 
 describe('CalendarioView (móvil)', () => {
