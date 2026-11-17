@@ -2,6 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
+import type { Publicada } from '@/domain/types'
+import { buscarItem } from '@/mocks/datos'
+import { server } from '@/mocks/server'
 import { crearRouter } from '@/router'
 
 async function montar(ruta: string) {
@@ -37,6 +41,30 @@ describe('DetallePanel', () => {
     expect(d.getByText(/Puesto 1 de/)).toBeInTheDocument()
     expect(d.getByText('Análisis de Fidel')).toBeInTheDocument()
     expect(d.getByText(/llegó a .* veces tu mediana/)).toBeInTheDocument()
+  })
+
+  it('publicada sin análisis (el backend lo manda vacío hasta S3): no pinta la sección', async () => {
+    const base = buscarItem('pub-1') as Publicada
+    server.use(http.get('*/api/items/pub-1', () => HttpResponse.json({ ...base, analisis: '' })))
+    await montar('/?item=pub-1')
+    const d = within(await panel())
+    expect(await d.findByText('Alcance')).toBeInTheDocument()
+    expect(d.queryByText('Análisis de Fidel')).not.toBeInTheDocument()
+    expect(d.getByText('Copy')).toBeInTheDocument()
+  })
+
+  it('403 en el detalle: avisa que falta el comercio y no ofrece reintentar', async () => {
+    server.use(
+      http.get('*/api/items/:id', () =>
+        HttpResponse.json({ detalle: 'sin comercio' }, { status: 403 }),
+      ),
+    )
+    await montar('/?item=pub-1')
+    const d = within(await panel())
+    expect(await d.findByRole('alert')).toHaveTextContent(
+      'Tu usuario todavía no tiene un comercio asignado.',
+    )
+    expect(d.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument()
   })
 
   it('idea: rota propuestas y despliega "Por qué"', async () => {

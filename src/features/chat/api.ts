@@ -1,4 +1,4 @@
-import { ApiError, urlApi } from '@/api/http'
+import { ApiError, cabecerasConAuth, urlApi } from '@/api/http'
 import { leerEventosSse } from './sse'
 import type { PeticionChat } from './tipos'
 
@@ -33,7 +33,10 @@ export async function* streamChat(
   const url = urlApi('/api/chat')
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    headers: await cabecerasConAuth({
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    }),
     body: JSON.stringify(peticion),
     signal,
   })

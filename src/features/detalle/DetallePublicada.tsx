@@ -120,9 +120,12 @@ export function DetallePublicada({
         </Seccion>
       )}
 
-      <VozFidel titulo="Análisis de Fidel">
-        <p className="text-[15px] leading-relaxed">{pub.analisis}</p>
-      </VozFidel>
+      {/* El backend manda "" hasta que exista el análisis con LLM (S3): no se pinta un párrafo vacío. */}
+      {pub.analisis.trim() && (
+        <VozFidel titulo="Análisis de Fidel">
+          <p className="text-[15px] leading-relaxed">{pub.analisis}</p>
+        </VozFidel>
+      )}
 
       <Seccion titulo="Copy">
         <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink/90">{pub.copy}</p>
