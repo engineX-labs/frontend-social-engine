@@ -1,15 +1,37 @@
 /**
- * Único punto donde se obtiene el token con el que el front habla con la API.
+ * Único punto donde el front obtiene el token con el que habla con la API.
  *
- * Hoy no hay login: en desarrollo (`npm run dev`) sale de `VITE_DEV_TOKEN`, un JWT firmado con el
- * secreto local de Supabase (ver `scripts/token-dev.mjs`). Con `import.meta.env.DEV` en falso Vite
- * elimina esa rama del build, así que el token nunca llega a producción. El login real con
- * supabase-js (ticket "Auth + onboarding de usuario") se enchufa acá, sin tocar el resto.
+ * Lo provee Clerk: `Acceso` registra acá el `getToken()` de la sesión mientras hay alguien
+ * adentro. El token de Clerk dura 60 segundos y el SDK lo renueva solo, así que nunca se guarda:
+ * cada pedido se lo vuelve a pedir. Sin sesión no hay proveedor y no se manda nada.
  */
+type ProveedorDeToken = () => Promise<string | null>
+
+let proveedor: ProveedorDeToken | null = null
+
+export function registrarProveedorDeToken(nuevo: ProveedorDeToken | null): void {
+  proveedor = nuevo
+}
+
 export async function obtenerToken(): Promise<string | null> {
-  if (import.meta.env.DEV) {
-    const token = import.meta.env.VITE_DEV_TOKEN as string | undefined
-    return token?.trim() || null
+  if (!proveedor) return null
+  try {
+    return await proveedor()
+  } catch {
+    return null
   }
-  return null
+}
+
+/** Quien se entera de que la API rechazó la sesión (401), p. ej. para volver al ingreso. */
+const oyentes = new Set<() => void>()
+
+export function alNoAutorizado(oyente: () => void): () => void {
+  oyentes.add(oyente)
+  return () => {
+    oyentes.delete(oyente)
+  }
+}
+
+export function avisarNoAutorizado(): void {
+  for (const oyente of [...oyentes]) oyente()
 }

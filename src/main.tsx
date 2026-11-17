@@ -4,6 +4,7 @@ import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MODO_MOCKS, reintentarConsulta } from '@/api/http'
+import { Acceso } from '@/app/Acceso'
 import { crearRouter } from './router'
 import './index.css'
 
@@ -20,10 +21,12 @@ async function iniciar() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        {/* reducedMotion="user": con "reducir movimiento" quedan solo los fundidos. */}
-        <MotionConfig reducedMotion="user">
-          <RouterProvider router={router} />
-        </MotionConfig>
+        <Acceso>
+          {/* reducedMotion="user": con "reducir movimiento" quedan solo los fundidos. */}
+          <MotionConfig reducedMotion="user">
+            <RouterProvider router={router} />
+          </MotionConfig>
+        </Acceso>
       </QueryClientProvider>
     </StrictMode>,
   )
