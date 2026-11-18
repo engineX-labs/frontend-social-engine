@@ -26,6 +26,8 @@ export interface NuevaProgramada {
   tipo: TipoPieza
   texto?: string | null
   medios: Medio[]
+  /** URL de una imagen ya subida (solo reel y video); `null` o ausente = sin portada elegida. */
+  portadaUrl?: string | null
   /** ISO 8601 en UTC (o con zona). */
   programadaPara?: string | null
   opciones?: OpcionesTikTok | null
@@ -38,6 +40,8 @@ export interface CambiosProgramada {
   tipo?: TipoPieza
   texto?: string | null
   medios?: Medio[]
+  /** `null` quita la portada elegida. */
+  portadaUrl?: string | null
   programadaPara?: string | null
   opciones?: OpcionesTikTok | null
 }

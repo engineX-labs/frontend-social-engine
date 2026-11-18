@@ -34,6 +34,8 @@ interface Props {
   /** `true` mientras haya alguna subida en curso: el formulario no debería enviarse. */
   onOcupado?: (ocupado: boolean) => void
   disabled?: boolean
+  /** Nombre accesible del selector de archivos; por defecto «Elegir archivo(s)». */
+  etiqueta?: string
 }
 
 interface Item {
@@ -94,7 +96,14 @@ function liberarVista(item: Item) {
  * firma una URL y el navegador lo manda directo a Zernio (ver `subida.ts`). El formulario recibe solo
  * los medios que ya están subidos, y `onOcupado` avisa mientras queda alguno en curso.
  */
-export function SubidaMedios({ tipo, valor, onChange, onOcupado, disabled = false }: Props) {
+export function SubidaMedios({
+  tipo,
+  valor,
+  onChange,
+  onOcupado,
+  disabled = false,
+  etiqueta,
+}: Props) {
   const idInput = useId()
   const idAyuda = useId()
   const limite = limiteDeMedios(tipo)
@@ -311,7 +320,7 @@ export function SubidaMedios({ tipo, valor, onChange, onOcupado, disabled = fals
           accept={aceptarDe(tipo)}
           multiple={limite > 1}
           disabled={bloqueado}
-          aria-label={limite === 1 ? 'Elegir archivo' : 'Elegir archivos'}
+          aria-label={etiqueta ?? (limite === 1 ? 'Elegir archivo' : 'Elegir archivos')}
           aria-describedby={idAyuda}
           onChange={alElegir}
         />
@@ -447,7 +456,9 @@ function Estado({ item }: { item: Item }) {
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="w-9 shrink-0 text-right text-xs text-muted tabular-nums">{pct}%</span>
+        <span className="shrink-0 text-right text-xs text-muted tabular-nums">
+          Subiendo… {pct} %
+        </span>
       </div>
     )
   }

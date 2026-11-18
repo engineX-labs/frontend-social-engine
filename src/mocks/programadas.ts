@@ -15,6 +15,7 @@ import type {
 } from '@/domain/types'
 import { claveMes } from '@/lib/fecha'
 import { fechaDemo } from './datos'
+import { portadaDemo } from './portadas'
 
 /**
  * Simula en memoria a `/api/programadas` del backend (`app/api/publicacion.py` y
@@ -155,11 +156,26 @@ function sembrar(): Programada[] {
   ]
 }
 
-let piezas: Programada[] = sembrar()
+/**
+ * La portada que devuelve el backend: la elegida (solo reel y video) o, si no, la primera imagen de
+ * `medios`. Un reel o video sin portada elegida da `null`. En el mock, las imágenes sembradas usan una
+ * portada de ejemplo (data URI) para que se vean sin pedir nada a la red.
+ */
+function portadaDe(tipo: TipoPieza, medios: Medio[], elegida: string | null): string | null {
+  if (tipo === 'reel' || tipo === 'video') return elegida
+  return medios.find((m) => m.tipo === 'imagen')?.url ?? null
+}
+
+function conPortada(p: Programada, idx: number): Programada {
+  const url = portadaDe(p.formato, p.medios, null)
+  return { ...p, portadaUrl: url ? portadaDemo(idx, 'Foto') : null }
+}
+
+let piezas: Programada[] = sembrar().map(conPortada)
 
 /** Vuelve al estado inicial (los tests lo llaman antes de cada caso). */
 export function reiniciarProgramadas(): void {
-  piezas = sembrar()
+  piezas = sembrar().map(conPortada)
   mockPublicacion.habilitada = true
   mockPublicacion.ahora = () => Date.now()
   mockPublicacion.forzar = null
@@ -211,6 +227,7 @@ export interface CuerpoCrear {
   tipo: TipoPieza
   texto?: string | null
   medios: Medio[]
+  portadaUrl?: string | null
   programadaPara?: string | null
   opciones?: OpcionesTikTok | null
 }
@@ -220,6 +237,7 @@ export interface CuerpoEditar {
   tipo?: TipoPieza
   texto?: string | null
   medios?: Medio[]
+  portadaUrl?: string | null
   programadaPara?: string | null
   opciones?: OpcionesTikTok | null
 }
@@ -287,6 +305,7 @@ export function crearPieza(c: CuerpoCrear): { pieza: Programada; estado: 200 | 2
     formato: c.tipo,
     texto: campos.texto,
     medios: campos.medios,
+    portadaUrl: portadaDe(c.tipo, campos.medios, c.portadaUrl ?? null),
     fecha,
     error: null,
     urlPublicada: null,
@@ -347,6 +366,11 @@ export function editarPieza(id: string, c: CuerpoEditar): Programada {
     formato: campos.tipo,
     texto: campos.texto,
     medios: campos.medios,
+    portadaUrl: portadaDe(
+      campos.tipo,
+      campos.medios,
+      'portadaUrl' in c ? (c.portadaUrl ?? null) : (actual.portadaUrl ?? null),
+    ),
     fecha: accion === 'publicar_ahora' ? new Date(mockPublicacion.ahora()).toISOString() : fecha,
   }
   piezas[i] = nueva

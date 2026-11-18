@@ -15,7 +15,7 @@ import {
   todasLasProgramadas,
 } from '@/mocks/programadas'
 import { server } from '@/mocks/server'
-import { leerVistas, olvidarVistas } from './avisos'
+import { idsSeguidos, leerVistas, olvidarVistas, seguirPieza } from './avisos'
 import { useSeguimientoDePublicacion } from './useSeguimientoDePublicacion'
 
 vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { error: vi.fn() }) }))
@@ -80,7 +80,7 @@ beforeEach(() => {
   vi.stubEnv('VITE_PUBLICACION_HABILITADA', 'true')
 })
 afterEach(() => {
-  refresco.intervaloMs = 30_000
+  refresco.intervaloMs = 10_000
   refresco.ventanaMs = 10 * 60_000
   visibilidad('visible')
   vi.unstubAllEnvs()
@@ -247,6 +247,24 @@ describe('avisos', () => {
     avanzarPieza('prog-2', 'publicada')
     montar()
     await waitFor(() => expect(toast).toHaveBeenCalledTimes(1))
+  })
+
+  it('avisa de una pieza recién publicada aunque esté en otro mes y ya haya cambiado antes del primer refresco', async () => {
+    quieto()
+    contar()
+    // Pieza de diciembre: no está en el calendario de noviembre que se ve.
+    const pieza = await crearProgramada({
+      redId: 'red-ig',
+      accion: 'publicar_ahora',
+      tipo: 'foto',
+      medios: [foto],
+    })
+    seguirPieza(pieza, 'publicar_ahora')
+    avanzarPieza(pieza.id, 'publicada', { urlPublicada: 'https://instagram.com/p/z' })
+    montar('2026-12')
+    await waitFor(() => expect(toast).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(toast).mock.calls[0]![0]).toBe('Se publicó en Instagram')
+    expect(idsSeguidos()).not.toContain(pieza.id)
   })
 
   it('la acción «Ver» abre la pieza', async () => {

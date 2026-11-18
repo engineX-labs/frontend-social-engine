@@ -1,4 +1,5 @@
 import { IconoRed } from '@/components/IconoRed'
+import { PortadaPieza } from '@/components/PortadaPieza'
 import { ETIQUETA_TIPO, situacionDe } from '@/domain/publicacion'
 import { hora } from '@/lib/fecha'
 import { cn } from '@/lib/utils'
@@ -37,7 +38,10 @@ export function ChipProgramada({
         borde,
       )}
     >
-      <span className="flex min-w-0 flex-1 flex-col pl-1">
+      <span className="block aspect-[4/5] w-8 shrink-0 overflow-hidden rounded-md">
+        <PortadaPieza pieza={pieza} />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
         <span className="cifra font-mono text-[11px] font-medium text-muted">
           {hora(pieza.fecha)}
         </span>

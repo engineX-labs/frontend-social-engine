@@ -287,6 +287,35 @@ describe('con la bandera prendida', () => {
     expect(nuevas()[0]).toMatchObject({ red: 'tiktok', formato: 'video', estado: 'programada' })
   })
 
+  it('un reel lleva la portada elegida, que se ve en el detalle de la pieza', async () => {
+    await montar('/?nueva=true')
+    await panel()
+    const usuario = await elegirRed(/Instagram/)
+    await usuario.click(screen.getByRole('radio', { name: 'Reel' }))
+    await usuario.upload(screen.getByLabelText('Elegir archivo'), archivo('reel.mp4', 'video/mp4'))
+    await screen.findByText('Subido')
+    await usuario.upload(screen.getByLabelText('Elegir portada'), archivo('portada.jpg'))
+    await waitFor(() => expect(screen.getAllByText('Subido')).toHaveLength(2))
+    fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: enDias(3) } })
+    fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '20:00' } })
+    await usuario.click(screen.getByRole('button', { name: 'Programar' }))
+    await waitFor(() => expect(nuevas()).toHaveLength(1))
+    expect(nuevas()[0]).toMatchObject({ formato: 'reel' })
+    expect(nuevas()[0]!.portadaUrl).toMatch(/portada\.jpg$/)
+    expect(nuevas()[0]!.medios).toHaveLength(1)
+  })
+
+  it('una foto no pide portada: es la primera imagen', async () => {
+    await montar('/?nueva=true')
+    await panel()
+    const usuario = await prepararFotoDeInstagram()
+    expect(screen.queryByLabelText('Elegir portada')).not.toBeInTheDocument()
+    expect(screen.getByText(/La portada es la primera imagen/)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: 'Programar' }))
+    await waitFor(() => expect(nuevas()).toHaveLength(1))
+    expect(nuevas()[0]!.portadaUrl).toBe(nuevas()[0]!.medios[0]!.url)
+  })
+
   it('TikTok: sin el consentimiento no se puede programar', async () => {
     await montar('/?nueva=true')
     await panel()

@@ -125,9 +125,48 @@ export function guardarVistas(vistas: Vistas): void {
   }
 }
 
+// --- Piezas seguidas por id ---------------------------------------------------------------------
+// El seguimiento mira el calendario del mes visible. Una pieza recién creada puede caer en otro mes o
+// quedar sin fecha: se la sigue por su id hasta que se resuelve, esté o no en el calendario.
+let seguidas: readonly string[] = []
+const oyentes = new Set<() => void>()
+const avisarCambio = () => oyentes.forEach((o) => o())
+
+export const suscribirSeguidas = (o: () => void) => {
+  oyentes.add(o)
+  return () => void oyentes.delete(o)
+}
+export const idsSeguidos = (): readonly string[] => seguidas
+
+export function dejarDeSeguir(ids: readonly string[]): void {
+  const quedan = seguidas.filter((id) => !ids.includes(id))
+  if (quedan.length === seguidas.length) return
+  seguidas = quedan
+  avisarCambio()
+}
+
+/**
+ * Empieza a seguir una pieza recién guardada. Se anota como pendiente apenas se crea: así, aunque
+ * cambie a publicada antes del primer refresco, esa transición se ve y se avisa.
+ */
+export function seguirPieza(pieza: Programada, accion: string): void {
+  const ahora = situacionDe(pieza)
+  const pendiente = PENDIENTES.includes(ahora)
+  if (!pendiente && accion !== 'publicar_ahora') return
+  const inicial: SituacionProgramada = pendiente ? ahora : 'publicando'
+  if (!(pieza.id in leerVistas()) || accion === 'publicar_ahora')
+    guardarVistas({ ...leerVistas(), [pieza.id]: inicial })
+  if (!seguidas.includes(pieza.id)) {
+    seguidas = [...seguidas, pieza.id]
+    avisarCambio()
+  }
+}
+
 /** Para los tests: olvida todo lo visto. */
 export function olvidarVistas(): void {
   memoria = {}
+  seguidas = []
+  avisarCambio()
   try {
     sessionStorage.removeItem(CLAVE)
   } catch {

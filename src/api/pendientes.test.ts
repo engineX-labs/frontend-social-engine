@@ -84,8 +84,8 @@ describe('proximoDespertar', () => {
 })
 
 describe('refresco', () => {
-  it('por defecto refresca cada 30 s y mira 10 minutos hacia adelante', () => {
-    expect(refresco.intervaloMs).toBe(30_000)
+  it('por defecto refresca cada 10 s y mira 10 minutos hacia adelante', () => {
+    expect(refresco.intervaloMs).toBe(10_000)
     expect(refresco.ventanaMs).toBe(10 * MIN)
   })
 })

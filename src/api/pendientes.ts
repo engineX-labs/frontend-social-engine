@@ -8,7 +8,7 @@ import type { Programada } from '@/domain/types'
  */
 export const refresco = {
   /** Cada cuánto se refresca mientras haya piezas pendientes. */
-  intervaloMs: 30_000,
+  intervaloMs: 10_000,
   /** Una programada entra en «pendiente» cuando falta menos que esto para su hora (o ya pasó). */
   ventanaMs: 10 * 60_000,
 }

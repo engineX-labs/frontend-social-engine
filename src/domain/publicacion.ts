@@ -1,4 +1,4 @@
-import type { OpcionesTikTok, Red, TipoPieza } from './types'
+import type { OpcionesTikTok, Programada, Red, TipoPieza } from './types'
 
 /**
  * Reglas de una pieza antes de publicarla o programarla. Copian las del backend
@@ -117,4 +117,15 @@ export function situacionDe(p: { estado: string; error: string | null }): Situac
     return 'fallida'
   }
   return p.estado as SituacionProgramada
+}
+
+/** Los tipos que admiten una portada elegida aparte: el video de un reel o de TikTok. */
+export const admitePortada = (tipo: TipoPieza | ''): boolean => tipo === 'reel' || tipo === 'video'
+
+/**
+ * La portada que se muestra de una pieza: la elegida o la primera imagen. `null` si no hay ninguna
+ * (un video sin portada: la pantalla puede mostrar un fotograma del video).
+ */
+export function portadaDePieza(p: Pick<Programada, 'portadaUrl' | 'medios'>): string | null {
+  return p.portadaUrl ?? p.medios.find((m) => m.tipo === 'imagen')?.url ?? null
 }

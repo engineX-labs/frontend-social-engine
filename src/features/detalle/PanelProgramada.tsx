@@ -28,7 +28,12 @@ import { EstadoError } from '@/components/estados'
 import { IconoRed } from '@/components/IconoRed'
 import { PanelLateral } from '@/components/PanelLateral'
 import { Boton } from '@/components/ui/Boton'
-import { ETIQUETA_TIPO, situacionDe, type SituacionProgramada } from '@/domain/publicacion'
+import {
+  admitePortada,
+  ETIQUETA_TIPO,
+  situacionDe,
+  type SituacionProgramada,
+} from '@/domain/publicacion'
 import type { Programada } from '@/domain/types'
 import { EtiquetaEstado } from '@/features/calendario/EtiquetaEstado'
 import { notaDeEstado } from '@/features/calendario/estado'
@@ -54,7 +59,8 @@ const CAMPO =
   'min-h-11 w-full rounded-md border border-line bg-raised px-3 py-2 text-base outline-none transition-[border-color] duration-(--dur-fast) ease-brand focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--focus-ring) disabled:opacity-60'
 
 function mensajeDeExito(pieza: Programada, accion: AccionGuardada | 'reprogramar'): string {
-  if (accion === 'publicar_ahora') return 'Se está publicando. Te avisamos cuando termine.'
+  if (accion === 'publicar_ahora')
+    return 'Se está publicando. Zernio la está procesando; los videos pesados pueden tardar unos minutos. Te avisamos cuando termine.'
   if ((accion === 'programar' || accion === 'reprogramar') && pieza.fecha)
     return `Programada para el ${diaLargo(pieza.fecha)} a las ${hora(pieza.fecha)}.`
   return 'Guardamos los cambios.'
@@ -497,6 +503,25 @@ function DetalleProgramada({
           {pieza.texto || <span className="text-muted">Sin texto</span>}
         </p>
       </Seccion>
+
+      {admitePortada(pieza.formato) && (
+        <Seccion titulo="Portada">
+          {pieza.portadaUrl ? (
+            <div className="aspect-[4/5] w-24 overflow-hidden rounded-lg bg-inset">
+              <img
+                src={pieza.portadaUrl}
+                alt="Portada elegida"
+                loading="lazy"
+                className="size-full object-cover"
+              />
+            </div>
+          ) : (
+            <p className="m-0 text-sm text-muted">
+              Sin portada elegida: la red usa un fotograma del video.
+            </p>
+          )}
+        </Seccion>
+      )}
 
       <Seccion titulo={pieza.medios.length === 1 ? 'Archivo' : 'Archivos'}>
         {pieza.medios.length === 0 ? (

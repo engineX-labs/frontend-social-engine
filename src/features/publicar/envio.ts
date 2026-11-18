@@ -1,6 +1,12 @@
 import { z } from 'zod'
 import type { CambiosProgramada, NuevaProgramada } from '@/api/publicacion'
-import { PRIVACIDAD_PUBLICA, TIPOS_POR_RED, validarFecha, validarPieza } from '@/domain/publicacion'
+import {
+  admitePortada,
+  PRIVACIDAD_PUBLICA,
+  TIPOS_POR_RED,
+  validarFecha,
+  validarPieza,
+} from '@/domain/publicacion'
 import type { Medio, OpcionesTikTok, Programada, Red, TipoPieza } from '@/domain/types'
 import { aUtcDesdeBA, claveDia } from '@/lib/fecha'
 import { opcionesTikTokIniciales } from './opcionesTiktok'
@@ -15,6 +21,8 @@ export interface ValoresPieza {
   /** HH:mm, o vacío. */
   hora: string
   medios: Medio[]
+  /** URL de la portada elegida (solo reel y video), o vacío. */
+  portada: string
   opciones: OpcionesTikTok
 }
 
@@ -47,6 +55,7 @@ export const esquemaValores = z.object({
     .string()
     .refine((v) => v === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(v), 'La hora no es válida'),
   medios: z.array(z.object({ url: z.string(), tipo: z.enum(['imagen', 'video']) })),
+  portada: z.string(),
   opciones: z.object({
     privacyLevel: z.string().optional(),
     allowComment: z.boolean().optional(),
@@ -133,6 +142,7 @@ export function armarCuerpo(
       tipo: v.tipo,
       texto,
       medios: v.medios,
+      ...(admitePortada(v.tipo) && v.portada ? { portadaUrl: v.portada } : {}),
       ...(programadaPara ? { programadaPara } : {}),
       ...(opciones ? { opciones } : {}),
     },
@@ -150,6 +160,7 @@ export function valoresDePieza(p: Programada): ValoresPieza {
     fecha,
     hora,
     medios: p.medios.map((m) => ({ url: m.url, tipo: m.tipo })),
+    portada: admitePortada(p.formato) ? (p.portadaUrl ?? '') : '',
     // El backend no devuelve las opciones de TikTok: arrancan vacías y, si no se tocan, no se mandan.
     opciones:
       p.red === 'tiktok' && (p.formato === 'video' || p.formato === 'fotos')
@@ -210,6 +221,8 @@ export function armarCambios(
   if (c.tipo !== pieza.formato) cambios.tipo = c.tipo
   if ((c.texto ?? null) !== (pieza.texto ?? null)) cambios.texto = c.texto ?? null
   if (!mismosMedios(c.medios, pieza.medios)) cambios.medios = c.medios
+  if (admitePortada(c.tipo) && (c.portadaUrl ?? null) !== (inicial.portada || null))
+    cambios.portadaUrl = c.portadaUrl ?? null
   if (accion !== 'publicar_ahora') {
     // El formulario trabaja al minuto: segundos y milésimas no cuentan como un cambio de fecha.
     const alMinuto = (iso: string | null) => (iso ? Math.floor(Date.parse(iso) / 60_000) : null)

@@ -72,6 +72,11 @@ export interface Programada {
   formato: TipoPieza
   texto: string | null
   medios: Medio[]
+  /**
+   * Portada: la imagen elegida; si no hay, la primera imagen de `medios`; en un reel o video sin portada,
+   * `null`. Puede faltar en respuestas viejas.
+   */
+  portadaUrl?: string | null
   /** ISO 8601 en UTC; `null` en un borrador sin fecha. */
   fecha: string | null
   /**

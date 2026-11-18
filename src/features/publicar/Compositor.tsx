@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Send, CalendarClock, Save } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { mensajeDePublicar, tipoDeConflicto } from '@/api/errores'
 import { ApiError } from '@/api/http'
@@ -12,8 +12,8 @@ import {
 } from '@/api/publicacion'
 import { ConfirmarDialogo } from '@/components/ConfirmarDialogo'
 import { Boton } from '@/components/ui/Boton'
-import { ETIQUETA_TIPO, limiteDeTexto, TIPOS_POR_RED } from '@/domain/publicacion'
-import type { Programada, TipoPieza } from '@/domain/types'
+import { admitePortada, ETIQUETA_TIPO, limiteDeTexto, TIPOS_POR_RED } from '@/domain/publicacion'
+import type { Medio, Programada, TipoPieza } from '@/domain/types'
 import { claveDia } from '@/lib/fecha'
 import { NOMBRE_RED } from '@/lib/redes'
 import { cn } from '@/lib/utils'
@@ -31,6 +31,7 @@ import { OpcionesTikTokForm } from './OpcionesTikTokForm'
 import { opcionesTikTokIniciales } from './opcionesTiktok'
 import { conReintentoSiProcesando } from './reintento'
 import { SelectorRed } from './SelectorRed'
+import { seguirPieza } from './avisos'
 import { SubidaMedios } from './SubidaMedios'
 
 const CAMPO =
@@ -57,6 +58,7 @@ function valoresIniciales(diaInicial: string | undefined, hoy: string): ValoresP
     fecha: diaInicial && diaInicial >= hoy ? diaInicial : '',
     hora: '',
     medios: [],
+    portada: '',
     opciones: {},
   }
 }
@@ -92,7 +94,9 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
     resolver: zodResolver(esquemaValores),
     defaultValues: inicial,
   })
-  const [subiendo, setSubiendo] = useState(false)
+  const [subiendoMedios, setSubiendoMedios] = useState(false)
+  const [subiendoPortada, setSubiendoPortada] = useState(false)
+  const subiendo = subiendoMedios || subiendoPortada
   const [problemas, setProblemas] = useState<string[]>([])
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null)
   const [porConfirmar, setPorConfirmar] = useState<{ ejecutar: () => void } | null>(null)
@@ -104,6 +108,11 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
   const redId = useWatch({ control, name: 'redId' })
   const tipo = useWatch({ control, name: 'tipo' })
   const medios = useWatch({ control, name: 'medios' })
+  const portada = useWatch({ control, name: 'portada' })
+  const mediosDePortada = useMemo<Medio[]>(
+    () => (portada ? [{ url: portada, tipo: 'imagen' }] : []),
+    [portada],
+  )
   const opciones = useWatch({ control, name: 'opciones' })
   const texto = useWatch({ control, name: 'texto' })
   const red = redes.data?.find((r) => r.id === redId)
@@ -131,12 +140,14 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
     // Un tipo que la red nueva no tiene se quita; no se adivina otro.
     if (nueva && tipo && !TIPOS_POR_RED[nueva.red].includes(tipo)) {
       setValue('tipo', '', { shouldDirty: true })
+      setValue('portada', '', { shouldDirty: true })
       setValue('opciones', {}, { shouldDirty: true })
     }
   }
 
   const elegirTipo = (nuevo: TipoPieza) => {
     setValue('tipo', nuevo, { shouldDirty: true })
+    if (!admitePortada(nuevo)) setValue('portada', '', { shouldDirty: true })
     // Las opciones de TikTok dependen de si es video o fotos: se vuelven a pedir.
     setValue(
       'opciones',
@@ -157,6 +168,7 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
         try {
           const pieza = await crear.mutateAsync({ ...cuerpo, id: idEnvio.current })
           idEnvio.current = nuevoIdDePieza()
+          seguirPieza(pieza, cuerpo.accion)
           onGuardada(pieza, cuerpo.accion)
           return
         } catch (e) {
@@ -194,6 +206,7 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
       const nueva = await conReintentoSiProcesando(() =>
         editar.mutateAsync({ id: pieza.id, cambios }),
       )
+      seguirPieza(nueva, accion)
       onGuardada(nueva, accion)
     } catch (e) {
       if (e instanceof ApiError && e.status === 422)
@@ -311,10 +324,32 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
               tipo={tipo}
               valor={medios}
               onChange={(m) => setValue('medios', m, { shouldDirty: true })}
-              onOcupado={setSubiendo}
+              onOcupado={setSubiendoMedios}
               disabled={pendiente}
             />
           </div>
+
+          {admitePortada(tipo) ? (
+            <div className="grid gap-2">
+              <span className="text-sm font-bold">Portada (opcional)</span>
+              <p className="m-0 text-[13px] text-muted">
+                Una imagen para el calendario y para la red. Si no elegís una, la red usa un
+                fotograma del video.
+              </p>
+              <SubidaMedios
+                tipo="foto"
+                etiqueta="Elegir portada"
+                valor={mediosDePortada}
+                onChange={(m) => setValue('portada', m[0]?.url ?? '', { shouldDirty: true })}
+                onOcupado={setSubiendoPortada}
+                disabled={pendiente}
+              />
+            </div>
+          ) : (
+            <p className="m-0 text-[13px] text-muted">
+              La portada es la primera imagen: ordená los archivos para elegirla.
+            </p>
+          )}
 
           {edicion && red.red === 'tiktok' && (tipo === 'video' || tipo === 'fotos') && (
             <p className="m-0 text-xs text-muted">
@@ -489,7 +524,8 @@ export function Compositor({ diaInicial, pieza, copiaDe, onGuardada, onSucio }: 
         )}
         {subiendo && (
           <p className="m-0 w-full text-xs text-muted" role="status">
-            Esperá a que terminen de subirse los archivos.
+            Esperá a que terminen de subirse los archivos: los videos pesados pueden tardar unos
+            minutos.
           </p>
         )}
       </div>

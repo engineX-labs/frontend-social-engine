@@ -1,10 +1,12 @@
 import { PRIVACIDAD_PUBLICA } from '@/domain/publicacion'
-import type { Medio } from '@/domain/types'
+import type { Medio, Programada } from '@/domain/types'
 import {
+  armarCambios,
   armarCuerpo,
   esquemaValores,
   fechaHoraAUtc,
   utcAFechaHora,
+  valoresDePieza,
   type ValoresPieza,
 } from './envio'
 
@@ -18,6 +20,7 @@ const base = (extra: Partial<ValoresPieza> = {}): ValoresPieza => ({
   fecha: '2026-11-20',
   hora: '20:00',
   medios: [foto],
+  portada: '',
   opciones: {},
   ...extra,
 })
@@ -200,5 +203,52 @@ describe('esquemaValores', () => {
     const mal = esquemaValores.safeParse(base({ fecha: '2026-02-31', hora: '25:00' }))
     expect(mal.success).toBe(false)
     expect(mal.error?.issues.map((i) => i.path[0]).sort()).toEqual(['fecha', 'hora'])
+  })
+})
+
+describe('portada elegida', () => {
+  const portada = 'https://mock.zernio.test/medios/portada.jpg'
+
+  it('la manda en un reel o video y la omite en otros tipos', () => {
+    const reel = armarCuerpo(
+      base({ tipo: 'reel', medios: [video], portada }),
+      'instagram',
+      'programar',
+      AHORA,
+    )
+    expect(reel.cuerpo?.portadaUrl).toBe(portada)
+    const foto1 = armarCuerpo(base({ portada }), 'instagram', 'programar', AHORA)
+    expect(foto1.cuerpo).not.toHaveProperty('portadaUrl')
+  })
+
+  it('al editar, manda la nueva portada o null si se quitó, y nada si no cambió', () => {
+    const pieza: Programada = {
+      tipo: 'programada',
+      id: 'p',
+      red: 'instagram',
+      redId: 'red-ig',
+      estado: 'programada',
+      formato: 'reel',
+      texto: 'Hola',
+      medios: [video],
+      portadaUrl: portada,
+      fecha: '2026-11-20T23:00:00.000Z',
+      error: null,
+      urlPublicada: null,
+      itemId: null,
+    }
+    const inicial = valoresDePieza(pieza)
+    expect(inicial.portada).toBe(portada)
+    const igual = armarCambios(inicial, inicial, pieza, 'instagram', 'guardar', AHORA)
+    expect(igual.sinCambios).toBe(true)
+    const quitada = armarCambios(
+      { ...inicial, portada: '' },
+      inicial,
+      pieza,
+      'instagram',
+      'guardar',
+      AHORA,
+    )
+    expect(quitada.cambios?.portadaUrl).toBeNull()
   })
 })

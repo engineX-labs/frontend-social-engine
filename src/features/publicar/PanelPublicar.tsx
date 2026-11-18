@@ -24,7 +24,8 @@ export function PanelPublicar() {
 }
 
 function mensajeDeExito(pieza: Programada, accion: AccionGuardada): string {
-  if (accion === 'publicar_ahora') return 'Se está publicando. Te avisamos cuando termine.'
+  if (accion === 'publicar_ahora')
+    return 'Se está publicando. Zernio la está procesando; los videos pesados pueden tardar unos minutos. Te avisamos cuando termine.'
   if (accion === 'programar' && pieza.fecha)
     return `Programada para el ${diaLargo(pieza.fecha)} a las ${hora(pieza.fecha)}.`
   return pieza.fecha

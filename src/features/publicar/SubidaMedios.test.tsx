@@ -117,7 +117,7 @@ describe('SubidaMedios · elegir y subir', () => {
 
     ultimoXhr().progreso(50, 100)
     await waitFor(() => expect(barra).toHaveAttribute('aria-valuenow', '50'))
-    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(screen.getByText('Subiendo… 50 %')).toBeInTheDocument()
 
     ultimoXhr().terminar(200)
     await screen.findByText('Subido')

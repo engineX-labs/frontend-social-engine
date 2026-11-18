@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react'
 import { IconoRed } from '@/components/IconoRed'
+import { PortadaPieza } from '@/components/PortadaPieza'
 import { ETIQUETA_TIPO, situacionDe } from '@/domain/publicacion'
 import type { Programada } from '@/domain/types'
 import { hora } from '@/lib/fecha'
@@ -33,8 +34,12 @@ export function TarjetaProgramada({
         falla ? 'border-danger' : 'border-line-strong',
       )}
     >
-      <span className="grid aspect-[4/5] w-16 shrink-0 place-items-center rounded-lg bg-raised text-muted">
-        <IconoRed red={pieza.red} className="size-6" />
+      <span className="relative block aspect-[4/5] w-16 shrink-0 overflow-hidden rounded-lg bg-raised text-muted">
+        <PortadaPieza pieza={pieza} />
+        <IconoRed
+          red={pieza.red}
+          className="absolute right-1 bottom-1 size-4 rounded-full bg-raised p-0.5"
+        />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
