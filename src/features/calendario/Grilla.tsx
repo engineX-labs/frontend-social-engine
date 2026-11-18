@@ -1,10 +1,14 @@
+import { IconoRed } from '@/components/IconoRed'
 import { Portada } from '@/components/Portada'
 import { Esqueleto } from '@/components/ui/Esqueleto'
 import type { ClaseRendimiento } from '@/domain/metrics'
-import type { Item } from '@/domain/types'
+import { situacionDe } from '@/domain/publicacion'
+import type { Publicada, Idea } from '@/domain/types'
 import { diasDeGrilla, hora } from '@/lib/fecha'
+import { NOMBRE_RED } from '@/lib/redes'
 import { cn } from '@/lib/utils'
-import { nombreDia, resumenDia } from './agrupar'
+import { nombreDia, resumenDia, type ItemCalendario } from './agrupar'
+import { ChipProgramada } from './ChipProgramada'
 import { IndicadorRendimiento } from './Rendimiento'
 
 const SEMANA = [
@@ -28,13 +32,15 @@ interface Props {
   hoy: string
   /** Día resaltado (YYYY-MM-DD) o null. */
   seleccionado: string | null
-  porDia: Map<string, Item[]>
+  porDia: Map<string, ItemCalendario[]>
   rendimientos: Rendimientos
   escritorio: boolean
+  /** Con publicar y programar prendido, todo lleva el ícono de su red (con la apagada, solo TikTok). */
+  conRed?: boolean
   onDia: (dia: string) => void
   /** "+N más": elige el día sin alternar (siempre abre su agenda). */
   onMas: (dia: string) => void
-  onItem: (item: Item) => void
+  onItem: (item: ItemCalendario) => void
 }
 
 function Encabezado({ escritorio }: { escritorio: boolean }) {
@@ -54,6 +60,7 @@ export function Grilla({
   porDia,
   rendimientos,
   escritorio,
+  conRed = false,
   onDia,
   onMas,
   onItem,
@@ -128,15 +135,26 @@ export function Grilla({
                   >
                     <NumeroDia numero={numero} esHoy={esHoy} />
                   </button>
-                  {items.slice(0, MAX_CHIPS).map((it, i) => (
-                    <Chip
-                      key={it.id}
-                      item={it}
-                      rendimiento={rendimientos.get(it.id)}
-                      retraso={Math.min(indice, 34) * 12 + i * 30}
-                      onClick={() => onItem(it)}
-                    />
-                  ))}
+                  {items.slice(0, MAX_CHIPS).map((it, i) => {
+                    const retraso = Math.min(indice, 34) * 12 + i * 30
+                    return it.tipo === 'programada' ? (
+                      <ChipProgramada
+                        key={it.id}
+                        pieza={it}
+                        retraso={retraso}
+                        onClick={() => onItem(it)}
+                      />
+                    ) : (
+                      <Chip
+                        key={it.id}
+                        item={it}
+                        conRed={conRed}
+                        rendimiento={rendimientos.get(it.id)}
+                        retraso={retraso}
+                        onClick={() => onItem(it)}
+                      />
+                    )
+                  })}
                   {items.length > MAX_CHIPS && (
                     <button
                       type="button"
@@ -212,8 +230,12 @@ const COLOR_PUNTO: Record<ClaseRendimiento, string> = {
   baja: 'bg-danger',
 }
 
-/** Un punto por pieza: las publicadas con el color de su rendimiento, las ideas con el de Fidel. */
-function Puntos({ items, rendimientos }: { items: Item[]; rendimientos: Rendimientos }) {
+/**
+ * Un punto por pieza: las publicadas con el color de su rendimiento, las ideas con el de Fidel y las
+ * guardadas desde la app como un aro hueco (un fallo, con el aro rojo). Es decorativo: el botón del
+ * día dice todo en su nombre.
+ */
+function Puntos({ items, rendimientos }: { items: ItemCalendario[]; rendimientos: Rendimientos }) {
   return (
     <span className="flex h-2 items-center gap-1" aria-hidden="true">
       {items.slice(0, 3).map((it) => (
@@ -221,9 +243,15 @@ function Puntos({ items, rendimientos }: { items: Item[]; rendimientos: Rendimie
           key={it.id}
           className={cn(
             'size-1.5 rounded-full',
-            it.tipo === 'publicada'
-              ? COLOR_PUNTO[rendimientos.get(it.id)?.clase ?? 'normal']
-              : 'fidel-gradiente',
+            it.tipo === 'publicada' && COLOR_PUNTO[rendimientos.get(it.id)?.clase ?? 'normal'],
+            it.tipo === 'idea' && 'fidel-gradiente',
+            it.tipo === 'programada' &&
+              cn(
+                'border bg-transparent',
+                ['fallida', 'no-se-publico'].includes(situacionDe(it))
+                  ? 'border-danger'
+                  : 'border-ink',
+              ),
           )}
         />
       ))}
@@ -233,21 +261,25 @@ function Puntos({ items, rendimientos }: { items: Item[]; rendimientos: Rendimie
 
 function Chip({
   item,
+  conRed,
   rendimiento,
   retraso,
   onClick,
 }: {
-  item: Item
+  item: Publicada | Idea
+  conRed: boolean
   rendimiento?: { razon: number; clase: ClaseRendimiento }
   retraso: number
   onClick: () => void
 }) {
   const publicada = item.tipo === 'publicada'
+  // Con publicar prendido (o si la publicación ya es de TikTok) se dice y se ve la red.
+  const red = publicada && (conRed || item.red !== 'instagram') ? item.red : null
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${hora(item.fecha)} ${item.formato}, ${publicada ? 'publicada' : 'sugerida'}`}
+      aria-label={`${hora(item.fecha)} ${item.formato}${red ? ` en ${NOMBRE_RED[red]}` : ''}, ${publicada ? 'publicada' : 'sugerida'}`}
       style={{ animationDelay: `${retraso}ms` }}
       className={cn(
         'flex w-full min-w-0 animate-aparecer items-center gap-2 rounded-lg border p-1 pr-1.5 text-left text-xs leading-tight [animation-duration:var(--dur-base)]',
@@ -268,6 +300,7 @@ function Chip({
           {item.formato}
         </span>
       </span>
+      {red && <IconoRed red={red} className="size-3.5 shrink-0 text-muted" />}
       {publicada && rendimiento && <IndicadorRendimiento rendimiento={rendimiento} />}
     </button>
   )
