@@ -1,3 +1,7 @@
+/** Lo que el filtro del calendario puede ocultar. */
+export type TipoFiltro = 'publicada' | 'idea' | 'programada'
+const TIPOS_FILTRO: readonly TipoFiltro[] = ['publicada', 'idea', 'programada']
+
 /** Parámetros de URL del calendario. Contrato compartido entre calendario, detalle y chat. */
 export interface CalendarioSearch {
   /** Mes visible, YYYY-MM (hora de Buenos Aires). */
@@ -7,7 +11,7 @@ export interface CalendarioSearch {
   /** Id de la publicación o idea abierta en el panel de detalle. */
   item?: string
   /** Tipos ocultos por los filtros. */
-  ocultar?: Array<'publicada' | 'idea'>
+  ocultar?: TipoFiltro[]
   /** Publicación o idea sobre la que se le pregunta a Fidel (chip de contexto del chat). */
   sobre?: string
   /** Pedido de abrir la barra de Fidel; se consume y se quita de la URL. */
@@ -30,9 +34,7 @@ export function validarCalendarioSearch(raw: Record<string, unknown>): Calendari
   if (typeof raw.dia === 'string' && esDiaReal(raw.dia)) out.dia = raw.dia
   if (typeof raw.item === 'string' && raw.item) out.item = raw.item
   if (Array.isArray(raw.ocultar)) {
-    const v = raw.ocultar.filter(
-      (x): x is 'publicada' | 'idea' => x === 'publicada' || x === 'idea',
-    )
+    const v = raw.ocultar.filter((x): x is TipoFiltro => TIPOS_FILTRO.includes(x as TipoFiltro))
     if (v.length) out.ocultar = v
   }
   if (typeof raw.sobre === 'string' && raw.sobre) out.sobre = raw.sobre

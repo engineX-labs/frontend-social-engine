@@ -3,16 +3,17 @@ import { motion, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendario } from '@/api/calendario'
 import { esErrorDeAcceso, mensajeDeApi } from '@/api/errores'
+import { useBorradoresSinFecha, usePublicacionDisponible } from '@/api/publicacion'
 import { EstadoError } from '@/components/estados'
 import type { CalendarioSearch } from '@/app/search'
 import { conRendimiento } from '@/domain/metrics'
-import type { Item } from '@/domain/types'
 import { claveDia, claveMes, desplazarMes, diasDeGrilla } from '@/lib/fecha'
 import { Agenda } from './Agenda'
-import { agruparPorDia, type Tipo } from './agrupar'
+import { agruparPorDia, programadasDelCalendario, type ItemCalendario, type Tipo } from './agrupar'
 import { BarraMes } from './BarraMes'
 import { Grilla, GrillaEsqueleto, type Rendimientos } from './Grilla'
 import { Resumen, ResumenEsqueleto } from './Resumen'
+import { SinFecha } from './SinFecha'
 import { TarjetaFidel } from './TarjetaFidel'
 import { useAncho } from '@/lib/useAncho'
 import { useEsEscritorio } from '@/lib/useMedia'
@@ -44,12 +45,21 @@ export function CalendarioView() {
   const mes = search.mes ?? claveMes(ahora)
   const ocultar = search.ocultar ?? SIN_OCULTAR
   const { data, error, isPending, isError, refetch } = useCalendario(mes)
+  // Publicar y programar: con la bandera apagada (o el backend en 404) el calendario es el de siempre,
+  // sin pedir `/api/redes` ni `/api/programadas` y sin mirar `programadas` aunque llegue.
+  const { disponible: conPublicar } = usePublicacionDisponible()
+  const borradoresQ = useBorradoresSinFecha(conPublicar)
 
   const ir = (cambio: Partial<CalendarioSearch>) =>
     void navigate({ search: (prev) => ({ ...prev, ...cambio }) })
 
-  const porDia = useMemo(() => (data ? agruparPorDia(data, ocultar) : null), [data, ocultar])
-  const sinFiltros = useMemo(() => (data ? agruparPorDia(data, SIN_OCULTAR) : null), [data])
+  const vista = useMemo(
+    () => (data ? { ...data, programadas: conPublicar ? (data.programadas ?? []) : [] } : null),
+    [data, conPublicar],
+  )
+  const porDia = useMemo(() => (vista ? agruparPorDia(vista, ocultar) : null), [vista, ocultar])
+  const sinFiltros = useMemo(() => (vista ? agruparPorDia(vista, SIN_OCULTAR) : null), [vista])
+  const cantidadProgramadas = vista ? programadasDelCalendario(vista).length : 0
   const rendimientos = useMemo<Rendimientos>(
     () =>
       new Map(
@@ -82,7 +92,7 @@ export function CalendarioView() {
     const sig = ocultar.includes(tipo) ? ocultar.filter((t) => t !== tipo) : [...ocultar, tipo]
     ir({ ocultar: sig.length ? sig : undefined })
   }
-  const abrir = (it: Item) => ir({ item: it.id, dia: claveDia(it.fecha) })
+  const abrir = (it: ItemCalendario) => ir({ item: it.id, dia: claveDia(it.fecha) })
   const elegirDia = (dia: string) =>
     ir({ dia: escritorio && dia === diaExplicito ? undefined : dia })
   const cambiarMes = (m: string) => ir({ mes: m, dia: undefined, item: undefined })
@@ -103,7 +113,16 @@ export function CalendarioView() {
       <BarraMes
         mes={mes}
         ocultar={ocultar}
-        cuentas={data ? { publicada: data.publicadas.length, idea: data.ideas.length } : null}
+        cuentas={
+          data
+            ? {
+                publicada: data.publicadas.length,
+                idea: data.ideas.length,
+                programada: cantidadProgramadas,
+              }
+            : null
+        }
+        conProgramadas={conPublicar}
         onMes={cambiarMes}
         onHoy={() => ir({ mes: undefined, dia: hoy, item: undefined })}
         onFiltro={alternar}
@@ -124,10 +143,20 @@ export function CalendarioView() {
         <>
           <Resumen datos={data} onItem={(id) => ir({ item: id })} />
           <TarjetaFidel ideas={data.ideas} onVer={(id) => ir({ item: id })} />
-          {data.publicadas.length + data.ideas.length === 0 && (
+          {data.publicadas.length + data.ideas.length + cantidadProgramadas === 0 && (
             <p className="rounded-xl bg-inset/60 px-4 py-3 text-sm text-muted">
-              Este mes todavía no tiene publicaciones ni ideas.
+              {conPublicar
+                ? 'Este mes todavía no tiene publicaciones, piezas programadas ni ideas.'
+                : 'Este mes todavía no tiene publicaciones ni ideas.'}
             </p>
+          )}
+          {conPublicar && !ocultar.includes('programada') && (
+            <SinFecha
+              borradores={borradoresQ.data ?? []}
+              error={borradoresQ.isError}
+              onReintentar={() => void borradoresQ.refetch()}
+              onAbrir={(id) => ir({ item: id })}
+            />
           )}
           <motion.div
             key={mes}
@@ -160,6 +189,7 @@ export function CalendarioView() {
               porDia={porDia}
               rendimientos={rendimientos}
               escritorio={escritorio}
+              conRed={conPublicar}
               onDia={elegirDia}
               onMas={(dia) => ir({ dia })}
               onItem={abrir}
@@ -171,6 +201,7 @@ export function CalendarioView() {
               hoy={hoy}
               items={porDia.get(diaAgenda) ?? []}
               rendimientos={rendimientos}
+              conRed={conPublicar}
               ocultas={
                 (sinFiltros.get(diaAgenda)?.length ?? 0) - (porDia.get(diaAgenda)?.length ?? 0)
               }
