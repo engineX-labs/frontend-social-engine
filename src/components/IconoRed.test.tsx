@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
-import { IconoRed, NOMBRE_RED } from './IconoRed'
+import { NOMBRE_RED } from '@/lib/redes'
+import { IconoRed } from './IconoRed'
 
 describe('IconoRed', () => {
   it('dibuja un ícono distinto por red y los dos son decorativos', () => {
