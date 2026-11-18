@@ -1,13 +1,17 @@
 import { http, HttpResponse } from 'msw'
 import { server } from '@/mocks/server'
 import { streamChat } from '@/features/chat/api'
-import { obtenerToken } from './auth'
+import { avisarNoAutorizado, obtenerToken } from './auth'
 import { ApiError, apiFetch, cabecerasConAuth, reintentarConsulta, urlApi } from './http'
 
-vi.mock('./auth', () => ({ obtenerToken: vi.fn() }))
+vi.mock('./auth', () => ({ obtenerToken: vi.fn(), avisarNoAutorizado: vi.fn() }))
 const token = vi.mocked(obtenerToken)
+const noAutorizado = vi.mocked(avisarNoAutorizado)
 
-beforeEach(() => token.mockResolvedValue(null))
+beforeEach(() => {
+  token.mockResolvedValue(null)
+  noAutorizado.mockClear()
+})
 
 describe('urlApi', () => {
   it('sin VITE_API_URL usa el origen actual', () => {
@@ -73,6 +77,18 @@ describe('apiFetch', () => {
       message: 'Falta iniciar sesión',
     })
   })
+
+  it('un 401 avisa para volver al ingreso; un 403 o un 500 no', async () => {
+    server.use(http.get('*/api/prueba', () => HttpResponse.json({ detalle: 'x' }, { status: 401 })))
+    await expect(apiFetch('/api/prueba')).rejects.toMatchObject({ status: 401 })
+    expect(noAutorizado).toHaveBeenCalledTimes(1)
+
+    for (const status of [403, 404, 500]) {
+      server.use(http.get('*/api/prueba', () => HttpResponse.json({}, { status })))
+      await expect(apiFetch('/api/prueba')).rejects.toMatchObject({ status })
+    }
+    expect(noAutorizado).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('streamChat', () => {
@@ -89,6 +105,17 @@ describe('streamChat', () => {
     )
     for await (const _ of streamChat({ mensajes: [{ rol: 'usuario', texto: 'hola' }] })) void _
     expect(auth).toBe('Bearer jwt-de-prueba')
+  })
+})
+
+describe('streamChat (errores)', () => {
+  it('un 401 del chat también avisa para volver al ingreso', async () => {
+    server.use(http.post('*/api/chat', () => HttpResponse.json({ detalle: 'x' }, { status: 401 })))
+    const leer = async () => {
+      for await (const _ of streamChat({ mensajes: [{ rol: 'usuario', texto: 'hola' }] })) void _
+    }
+    await expect(leer()).rejects.toMatchObject({ status: 401 })
+    expect(noAutorizado).toHaveBeenCalledTimes(1)
   })
 })
 

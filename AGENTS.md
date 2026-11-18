@@ -22,17 +22,18 @@ Frontend de **social engine** (engineX): calendario de publicaciones e ideas y c
 
 ## Stack (Notion: "Stack social engine")
 
-Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, supabase-js, React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Instalados hoy: Tailwind, TanStack Router/Query, MSW, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. Pendientes (se suman cuando se usen): openapi-typescript/openapi-fetch (cuando exista el esquema), supabase-js (login), React Hook Form + Zod (formularios).
+Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, Clerk (`@clerk/react`, login), React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Instalados hoy: Tailwind, TanStack Router/Query, MSW, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. Pendientes (se suman cuando se usen): openapi-typescript/openapi-fetch (cuando exista el esquema), supabase-js (login), React Hook Form + Zod (formularios).
 
 ## Datos y mocks
 
 - Sin `VITE_API_URL` la app usa datos de ejemplo (MSW, también en el build de producción: así funciona el demo en Vercel). Con `VITE_API_URL` (admite prefijo, p. ej. `https://api.x.com/v1`) habla con el backend real.
 - **Correr contra el backend local** (`.env.example` lista las variables; copiarlo a `.env.local`):
-  1. Backend (`backend-social-engine`, rama con `app/api/`): `docker compose up -d db`, `alembic upgrade head`, `uvicorn app.main:app --port 8000`, con `SUPABASE_JWT_SECRET` y `CORS_ORIGINS=http://localhost:5173` en su `.env`.
-  2. Alta del comercio y su cuenta de Zernio con `python -m app.admin crear-comercio` y `cargar-cuenta` (la key de Zernio se pide por teclado).
-  3. Token de desarrollo: `SUPABASE_JWT_SECRET=... node scripts/token-dev.mjs <uuid del usuario>` y pegarlo como `VITE_DEV_TOKEN` en `.env.local`.
-  4. `VITE_API_URL=http://localhost:8000` y `VITE_MOCK_CHAT=true`, y `npm run dev`.
-- Token: `src/api/auth.ts` es el único punto que lo obtiene (hoy `VITE_DEV_TOKEN` solo en `npm run dev`; el login de Supabase se enchufa ahí). `apiFetch` y `streamChat` mandan `Authorization: Bearer`.
+  1. Backend (`backend-social-engine`, rama `develop`): `docker compose up -d db`, `alembic upgrade head`, `uvicorn app.main:app --port 8000`, con `CLERK_ISSUER` (la URL de la Frontend API de Clerk) y `CORS_ORIGINS=http://localhost:5173` en su `.env`.
+  2. Usuario: en el panel de Clerk (Users) crear o invitar al usuario y copiar su id (`user_...`).
+  3. Alta del comercio y su cuenta de Zernio con `python -m app.admin crear-comercio --usuario user_...` y `cargar-cuenta` (la key de Zernio se pide por teclado).
+  4. `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL=http://localhost:8000` y `VITE_MOCK_CHAT=true` en `.env.local`, y `npm run dev`. Se inicia sesión con ese usuario.
+- **Login (Clerk):** obligatorio siempre; sin `VITE_CLERK_PUBLISHABLE_KEY` la app muestra un aviso de configuración. Los usuarios entran por invitación (modo Invite-only en el panel de Clerk), no hay registro público. `src/app/Acceso.tsx` pone el proveedor y la pantalla de ingreso (con los tokens de engineX y la traducción `esMX`); sin sesión no se monta ni la API ni el router. Los tests usan un doble de `@clerk/react` (`src/test/clerk.tsx`).
+- Token: `src/api/auth.ts` es el único punto que lo obtiene; `Acceso` le registra el `getToken()` de Clerk. Dura 60 s y Clerk lo renueva: nunca se guarda. `apiFetch` y `streamChat` mandan `Authorization: Bearer`. Un 401 de la API cierra la sesión y vuelve al ingreso, y se vacía la caché de consultas para que el próximo usuario no vea datos del anterior.
 - Errores de la API: 401 ("tu sesión venció") y 403 ("tu usuario todavía no tiene un comercio asignado") no se reintentan ni ofrecen "Reintentar". `analisis` llega vacío hasta S3 y `ideas` vacías hasta S4; la UI lo tolera.
 - Contrato de chat (SSE): `POST /api/chat` con `{ mensajes: [{rol, texto}], itemId? }`; responde `text/event-stream` con `data: {"delta":"..."}` y `data: [DONE]`; errores a mitad de stream con `event: error`.
 

@@ -1,3 +1,4 @@
+import { UserButton } from '@clerk/react'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { Moon, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
@@ -62,6 +63,7 @@ function Marco() {
               <Moon className="size-4" aria-hidden="true" />
             )}
           </Boton>
+          <UserButton />
         </div>
       </header>
       <div className="flex">

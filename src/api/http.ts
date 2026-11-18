@@ -1,4 +1,4 @@
-import { obtenerToken } from './auth'
+import { avisarNoAutorizado, obtenerToken } from './auth'
 
 export class ApiError extends Error {
   status: number
@@ -41,6 +41,13 @@ export async function cabecerasConAuth(base?: HeadersInit): Promise<Headers> {
   return cabeceras
 }
 
+/** El error de una respuesta que no fue ok. Un 401 además avisa para volver al ingreso. */
+export async function errorDeRespuesta(res: Response): Promise<ApiError> {
+  const cuerpo = (await res.json().catch(() => null)) as { detalle?: string } | null
+  if (res.status === 401) avisarNoAutorizado()
+  return new ApiError(res.status, cuerpo?.detalle ?? `Error ${res.status}`)
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit & { params?: Record<string, string> },
@@ -49,10 +56,7 @@ export async function apiFetch<T>(
   const url = urlApi(path)
   for (const [k, v] of Object.entries(params ?? {})) url.searchParams.set(k, v)
   const res = await fetch(url, { ...resto, headers: await cabecerasConAuth(headers) })
-  if (!res.ok) {
-    const cuerpo = (await res.json().catch(() => null)) as { detalle?: string } | null
-    throw new ApiError(res.status, cuerpo?.detalle ?? `Error ${res.status}`)
-  }
+  if (!res.ok) throw await errorDeRespuesta(res)
   return res.json() as Promise<T>
 }
 

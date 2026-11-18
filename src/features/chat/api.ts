@@ -1,4 +1,4 @@
-import { ApiError, cabecerasConAuth, urlApi } from '@/api/http'
+import { cabecerasConAuth, errorDeRespuesta, urlApi } from '@/api/http'
 import { leerEventosSse } from './sse'
 import type { PeticionChat } from './tipos'
 
@@ -40,10 +40,7 @@ export async function* streamChat(
     body: JSON.stringify(peticion),
     signal,
   })
-  if (!res.ok) {
-    const cuerpo = (await res.json().catch(() => null)) as { detalle?: string } | null
-    throw new ApiError(res.status, cuerpo?.detalle ?? `Error ${res.status}`)
-  }
+  if (!res.ok) throw await errorDeRespuesta(res)
   if (!res.body) throw new ChatStreamError('La respuesta no trae contenido.')
 
   for await (const ev of leerEventosSse(res.body)) {
