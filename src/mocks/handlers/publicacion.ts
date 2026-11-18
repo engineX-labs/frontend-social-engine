@@ -30,6 +30,7 @@ async function responder(fn: () => Response | Promise<Response>): Promise<Respon
 }
 
 export const subidaMockUrl = 'https://mock-subida.zernio.test'
+const CORS_SUBIDA = { 'Access-Control-Allow-Origin': '*' }
 
 export const publicacionHandlers = [
   http.get('*/api/redes', () =>
@@ -63,8 +64,24 @@ export const publicacionHandlers = [
       })
     }),
   ),
-  // El almacenamiento de Zernio al que el navegador sube el archivo con la URL firmada.
-  http.put(`${subidaMockUrl}/put/*`, () => new HttpResponse(null, { status: 200 })),
+  // El almacenamiento de Zernio al que el navegador sube el archivo con la URL firmada. Es de otro
+  // origen: un navegador (y jsdom) manda antes un OPTIONS y exige `Access-Control-Allow-Origin`.
+  http.options(
+    `${subidaMockUrl}/put/*`,
+    () =>
+      new HttpResponse(null, {
+        status: 204,
+        headers: {
+          ...CORS_SUBIDA,
+          'Access-Control-Allow-Methods': 'PUT',
+          'Access-Control-Allow-Headers': '*',
+        },
+      }),
+  ),
+  http.put(
+    `${subidaMockUrl}/put/*`,
+    () => new HttpResponse(null, { status: 200, headers: CORS_SUBIDA }),
+  ),
   http.post('*/api/programadas', ({ request }) =>
     responder(async () => {
       const { pieza, estado } = crearPieza((await request.json()) as CuerpoCrear)

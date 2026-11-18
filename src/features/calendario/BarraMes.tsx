@@ -1,4 +1,4 @@
-import { CalendarClock, Check, ChevronLeft, ChevronRight, EyeOff } from 'lucide-react'
+import { CalendarClock, Check, ChevronLeft, ChevronRight, EyeOff, Plus } from 'lucide-react'
 import { AvatarFidel } from '@/components/ui/AvatarFidel'
 import { Boton } from '@/components/ui/Boton'
 import { nombreMes, desplazarMes } from '@/lib/fecha'
@@ -14,6 +14,8 @@ interface Props {
   onMes: (mes: string) => void
   onHoy: () => void
   onFiltro: (tipo: Tipo) => void
+  /** Abre «Nueva publicación». Solo con publicar y programar prendido. */
+  onNueva?: () => void
 }
 
 const FILTROS: { tipo: Tipo; texto: string }[] = [
@@ -30,6 +32,7 @@ export function BarraMes({
   onMes,
   onHoy,
   onFiltro,
+  onNueva,
 }: Props) {
   const marcaAncha = conProgramadas ? '@max-[559px]:hidden' : ''
   return (
@@ -37,6 +40,17 @@ export function BarraMes({
       <h2 aria-live="polite" className="mr-auto text-2xl font-extrabold tracking-tight">
         {nombreMes(mes)}
       </h2>
+      {onNueva && (
+        <Boton variante="primario" onClick={onNueva} aria-label="Nueva publicación">
+          <Plus className="size-4" strokeWidth={2.5} aria-hidden="true" />
+          <span aria-hidden="true" className="@max-[559px]:hidden">
+            Nueva publicación
+          </span>
+          <span aria-hidden="true" className="@min-[560px]:hidden">
+            Nueva
+          </span>
+        </Boton>
+      )}
       <div className="flex items-center gap-1.5">
         <Boton
           tamano="icono"

@@ -29,7 +29,11 @@ function Marco() {
   // En escritorio ancho el panel de detalle convive con la grilla: se reserva su espacio.
   const conPanel = useRouterState({
     select: (s) =>
-      s.location.pathname === '/' && Boolean((s.location.search as { item?: string }).item),
+      s.location.pathname === '/' &&
+      Boolean(
+        (s.location.search as { item?: string; nueva?: boolean }).item ||
+        (s.location.search as { nueva?: boolean }).nueva,
+      ),
   })
 
   return (

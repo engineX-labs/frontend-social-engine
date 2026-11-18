@@ -1,5 +1,6 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Plus } from 'lucide-react'
 import { EtiquetaTipo } from '@/components/EtiquetaTipo'
+import { Boton } from '@/components/ui/Boton'
 import { IconoRed } from '@/components/IconoRed'
 import { Portada } from '@/components/Portada'
 import { hora } from '@/lib/fecha'
@@ -20,16 +21,35 @@ interface Props {
   /** Con publicar y programar prendido, todo lleva su red y el vacío nombra las piezas programadas. */
   conRed?: boolean
   onItem: (item: ItemCalendario) => void
+  /** Abre «Nueva publicación» con este día. Solo con publicar prendido y desde hoy en adelante. */
+  onProgramar?: () => void
 }
 
 /** Lista de tarjetas del día seleccionado. */
-export function Agenda({ dia, hoy, items, rendimientos, ocultas, conRed = false, onItem }: Props) {
+export function Agenda({
+  dia,
+  hoy,
+  items,
+  rendimientos,
+  ocultas,
+  conRed = false,
+  onItem,
+  onProgramar,
+}: Props) {
   return (
     <section aria-labelledby="agenda-titulo" className="mt-4">
-      <h3 id="agenda-titulo" className="text-lg font-extrabold tracking-tight">
-        {mayuscula(nombreDia(dia))}
-        {dia === hoy && <span className="font-semibold text-muted"> · hoy</span>}
-      </h3>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h3 id="agenda-titulo" className="text-lg font-extrabold tracking-tight">
+          {mayuscula(nombreDia(dia))}
+          {dia === hoy && <span className="font-semibold text-muted"> · hoy</span>}
+        </h3>
+        {onProgramar && dia >= hoy && (
+          <Boton tamano="sm" onClick={onProgramar}>
+            <Plus className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
+            Programar acá
+          </Boton>
+        )}
+      </div>
       {items.length === 0 ? (
         <div
           key={dia}

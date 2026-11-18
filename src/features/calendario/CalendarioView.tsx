@@ -126,6 +126,7 @@ export function CalendarioView() {
         onMes={cambiarMes}
         onHoy={() => ir({ mes: undefined, dia: hoy, item: undefined })}
         onFiltro={alternar}
+        onNueva={conPublicar ? () => ir({ nueva: true }) : undefined}
       />
       {isPending && (
         <div role="status" aria-label="Cargando el mes" className="flex flex-col gap-4">
@@ -206,6 +207,7 @@ export function CalendarioView() {
                 (sinFiltros.get(diaAgenda)?.length ?? 0) - (porDia.get(diaAgenda)?.length ?? 0)
               }
               onItem={(it) => ir({ item: it.id })}
+              onProgramar={conPublicar ? () => ir({ nueva: true, dia: diaAgenda }) : undefined}
             />
           )}
         </>

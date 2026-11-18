@@ -16,6 +16,8 @@ export interface CalendarioSearch {
   sobre?: string
   /** Pedido de abrir la barra de Fidel; se consume y se quita de la URL. */
   fidel?: 'abierto'
+  /** Panel «Nueva publicación» abierto. Con `dia`, la fecha arranca en ese día. */
+  nueva?: true
 }
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
@@ -39,6 +41,9 @@ export function validarCalendarioSearch(raw: Record<string, unknown>): Calendari
   }
   if (typeof raw.sobre === 'string' && raw.sobre) out.sobre = raw.sobre
   if (raw.fidel === 'abierto') out.fidel = 'abierto'
+  // El router convierte `?nueva=true` en el booleano, pero un enlace escrito a mano puede traer 1.
+  if (raw.nueva === true || raw.nueva === 'true' || raw.nueva === 1 || raw.nueva === '1')
+    out.nueva = true
   return out
 }
 
