@@ -18,6 +18,8 @@ export interface CalendarioSearch {
   fidel?: 'abierto'
   /** Panel «Nueva publicación» abierto. Con `dia`, la fecha arranca en ese día. */
   nueva?: true
+  /** Con `nueva`, id de la pieza de la que se copian red, tipo, texto y archivos («Crear de nuevo»). */
+  copiar?: string
 }
 
 const MES = /^\d{4}-(0[1-9]|1[0-2])$/
@@ -44,6 +46,7 @@ export function validarCalendarioSearch(raw: Record<string, unknown>): Calendari
   // El router convierte `?nueva=true` en el booleano, pero un enlace escrito a mano puede traer 1.
   if (raw.nueva === true || raw.nueva === 'true' || raw.nueva === 1 || raw.nueva === '1')
     out.nueva = true
+  if (typeof raw.copiar === 'string' && raw.copiar) out.copiar = raw.copiar
   return out
 }
 

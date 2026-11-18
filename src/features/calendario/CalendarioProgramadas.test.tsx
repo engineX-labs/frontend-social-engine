@@ -400,8 +400,8 @@ describe('Calendario con piezas programadas (móvil)', () => {
   })
 })
 
-describe('Detalle de una pieza guardada (todavía sin panel propio)', () => {
-  it('abrir `?item=` de una programada muestra el estado de «no encontrado» sin romper', async () => {
+describe('Detalle de una pieza guardada', () => {
+  it('abrir `?item=` de una programada abre su detalle, con el calendario de atrás en pie', async () => {
     prender()
     const history = createMemoryHistory({ initialEntries: ['/?mes=2026-11&item=prog-2'] })
     const router = crearRouter(history)
@@ -413,11 +413,11 @@ describe('Detalle de una pieza guardada (todavía sin panel propio)', () => {
       </QueryClientProvider>,
     )
     await router.load()
-    const dialogo = await screen.findByRole('dialog')
-    expect(await within(dialogo).findByRole('alert')).toHaveTextContent(
-      /No encontramos este elemento/,
-    )
-    // El calendario de atrás sigue en pie.
+    // Primero se resuelve qué es el id (no estaba en memoria) y después aparece el panel de la pieza.
+    const texto = await screen.findByText('Cinco looks para la semana, uno por día. Deslizá.')
+    const dialogo = screen.getByRole('dialog')
+    expect(dialogo).toContainElement(texto)
+    expect(within(dialogo).queryByText(/No encontramos este elemento/)).not.toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Noviembre 2026' })).toBeInTheDocument()
   })
 })
