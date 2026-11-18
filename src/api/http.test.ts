@@ -89,6 +89,50 @@ describe('apiFetch', () => {
     }
     expect(noAutorizado).toHaveBeenCalledTimes(1)
   })
+
+  it('manda un cuerpo JSON con su Content-Type', async () => {
+    let visto: { tipo: string | null; cuerpo: unknown } | null = null
+    server.use(
+      http.post('*/api/prueba', async ({ request }) => {
+        visto = { tipo: request.headers.get('Content-Type'), cuerpo: await request.json() }
+        return HttpResponse.json({ ok: true }, { status: 201 })
+      }),
+    )
+    await apiFetch('/api/prueba', { method: 'POST', json: { redId: 'a', medios: [] } })
+    expect(visto).toEqual({ tipo: 'application/json', cuerpo: { redId: 'a', medios: [] } })
+  })
+
+  it('un 204 no tiene cuerpo y devuelve undefined', async () => {
+    server.use(http.delete('*/api/prueba/1', () => new HttpResponse(null, { status: 204 })))
+    await expect(apiFetch('/api/prueba/1', { method: 'DELETE' })).resolves.toBeUndefined()
+  })
+
+  it('un 422 conserva los problemas y el código si llega', async () => {
+    server.use(
+      http.post('*/api/prueba', () =>
+        HttpResponse.json(
+          { detalle: 'Pedido inválido', problemas: ['Uno', 'Dos', 3], codigo: 'regla' },
+          { status: 422 },
+        ),
+      ),
+    )
+    const error = await apiFetch('/api/prueba', { method: 'POST', json: {} }).catch(
+      (e: unknown) => e,
+    )
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 422,
+      message: 'Pedido inválido',
+      problemas: ['Uno', 'Dos'],
+      codigo: 'regla',
+    })
+  })
+
+  it('un error sin cuerpo legible usa el código de estado', async () => {
+    server.use(http.get('*/api/prueba', () => new HttpResponse('caído', { status: 502 })))
+    const error = await apiFetch('/api/prueba').catch((e: unknown) => e)
+    expect(error).toMatchObject({ status: 502, message: 'Error 502', problemas: [], codigo: null })
+  })
 })
 
 describe('streamChat', () => {

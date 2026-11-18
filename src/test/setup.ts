@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 import { registrarProveedorDeToken } from '@/api/auth'
+import { reiniciarProgramadas } from '@/mocks/programadas'
 import { server } from '@/mocks/server'
 import { clerkPrueba } from './clerk'
 
@@ -13,6 +14,7 @@ afterEach(() => {
   cleanup()
   localStorage.clear()
   server.resetHandlers()
+  reiniciarProgramadas()
   clerkPrueba.restablecer()
   registrarProveedorDeToken(null)
 })

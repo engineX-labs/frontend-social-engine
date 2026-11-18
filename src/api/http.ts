@@ -2,10 +2,20 @@ import { avisarNoAutorizado, obtenerToken } from './auth'
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  /** Los problemas de un 422 de reglas (`{ detalle, problemas }`), en castellano. */
+  problemas: string[]
+  /** Código estable del error si el backend lo manda (hoy los 409 solo traen `detalle`). */
+  codigo: string | null
+  constructor(
+    status: number,
+    message: string,
+    extra?: { problemas?: string[]; codigo?: string | null },
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.problemas = extra?.problemas ?? []
+    this.codigo = extra?.codigo ?? null
   }
 }
 
@@ -43,20 +53,45 @@ export async function cabecerasConAuth(base?: HeadersInit): Promise<Headers> {
 
 /** El error de una respuesta que no fue ok. Un 401 además avisa para volver al ingreso. */
 export async function errorDeRespuesta(res: Response): Promise<ApiError> {
-  const cuerpo = (await res.json().catch(() => null)) as { detalle?: string } | null
+  const cuerpo = (await res.json().catch(() => null)) as {
+    detalle?: unknown
+    problemas?: unknown
+    codigo?: unknown
+  } | null
   if (res.status === 401) avisarNoAutorizado()
-  return new ApiError(res.status, cuerpo?.detalle ?? `Error ${res.status}`)
+  return new ApiError(
+    res.status,
+    typeof cuerpo?.detalle === 'string' ? cuerpo.detalle : `Error ${res.status}`,
+    {
+      problemas: Array.isArray(cuerpo?.problemas)
+        ? cuerpo.problemas.filter((p): p is string => typeof p === 'string')
+        : [],
+      codigo: typeof cuerpo?.codigo === 'string' ? cuerpo.codigo : null,
+    },
+  )
 }
 
 export async function apiFetch<T>(
   path: string,
-  init?: RequestInit & { params?: Record<string, string> },
+  init?: Omit<RequestInit, 'body'> & {
+    params?: Record<string, string>
+    /** Cuerpo JSON: se serializa y se manda con `Content-Type: application/json`. */
+    json?: unknown
+  },
 ): Promise<T> {
-  const { params, headers, ...resto } = init ?? {}
+  const { params, json, headers, ...resto } = init ?? {}
   const url = urlApi(path)
   for (const [k, v] of Object.entries(params ?? {})) url.searchParams.set(k, v)
-  const res = await fetch(url, { ...resto, headers: await cabecerasConAuth(headers) })
+  const cabeceras = await cabecerasConAuth(headers)
+  let body: string | undefined
+  if (json !== undefined) {
+    cabeceras.set('Content-Type', 'application/json')
+    body = JSON.stringify(json)
+  }
+  const res = await fetch(url, { ...resto, body, headers: cabeceras })
   if (!res.ok) throw await errorDeRespuesta(res)
+  // 204 (por ejemplo, DELETE): no hay cuerpo que leer.
+  if (res.status === 204) return undefined as T
   return res.json() as Promise<T>
 }
 

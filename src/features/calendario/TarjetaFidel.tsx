@@ -2,11 +2,11 @@ import { Link } from '@tanstack/react-router'
 import { AvatarFidel } from '@/components/ui/AvatarFidel'
 import { Boton } from '@/components/ui/Boton'
 import { botonClases } from '@/components/ui/boton-clases'
-import type { Formato, Idea } from '@/domain/types'
+import type { FormatoIdea, Idea } from '@/domain/types'
 import { claveDia, hora } from '@/lib/fecha'
 import { nombreDia } from './agrupar'
 
-const CON_ARTICULO: Record<Formato, string> = {
+const CON_ARTICULO: Record<FormatoIdea, string> = {
   Reel: 'un reel',
   Carrusel: 'un carrusel',
   Foto: 'una foto',
