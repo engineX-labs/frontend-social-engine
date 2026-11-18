@@ -1,8 +1,9 @@
 import { z } from 'zod'
-import type { NuevaProgramada } from '@/api/publicacion'
-import { TIPOS_POR_RED, validarFecha, validarPieza } from '@/domain/publicacion'
-import type { Medio, OpcionesTikTok, Red, TipoPieza } from '@/domain/types'
+import type { CambiosProgramada, NuevaProgramada } from '@/api/publicacion'
+import { PRIVACIDAD_PUBLICA, TIPOS_POR_RED, validarFecha, validarPieza } from '@/domain/publicacion'
+import type { Medio, OpcionesTikTok, Programada, Red, TipoPieza } from '@/domain/types'
 import { aUtcDesdeBA, claveDia } from '@/lib/fecha'
+import { opcionesTikTokIniciales } from './opcionesTiktok'
 
 /** Lo que el formulario del compositor guarda. Fecha y hora van en hora de Buenos Aires. */
 export interface ValoresPieza {
@@ -18,6 +19,10 @@ export interface ValoresPieza {
 }
 
 export type AccionDeEnvio = 'borrador' | 'programar' | 'publicar_ahora'
+/** Lo que se hace al editar una pieza: `guardar` (también reprograma), `programar` o `publicar_ahora`. */
+export type AccionDeEdicion = 'guardar' | 'programar' | 'publicar_ahora'
+/** La acción con la que se guardó una pieza, para el aviso de éxito. */
+export type AccionGuardada = AccionDeEnvio | 'guardar'
 
 const TIPOS = ['foto', 'carrusel', 'reel', 'historia', 'video', 'fotos'] as const
 
@@ -133,4 +138,84 @@ export function armarCuerpo(
     },
     problemas: [],
   }
+}
+
+/** Los valores del formulario para una pieza ya guardada (al editarla o crearla de nuevo). */
+export function valoresDePieza(p: Programada): ValoresPieza {
+  const { fecha, hora } = p.fecha ? utcAFechaHora(p.fecha) : { fecha: '', hora: '' }
+  return {
+    redId: p.redId,
+    tipo: p.formato,
+    texto: p.texto ?? '',
+    fecha,
+    hora,
+    medios: p.medios.map((m) => ({ url: m.url, tipo: m.tipo })),
+    // El backend no devuelve las opciones de TikTok: arrancan vacías y, si no se tocan, no se mandan.
+    opciones:
+      p.red === 'tiktok' && (p.formato === 'video' || p.formato === 'fotos')
+        ? opcionesTikTokIniciales(p.formato)
+        : {},
+  }
+}
+
+/**
+ * Opciones de TikTok válidas, solo para validar cuando el usuario no las tocó: el backend ya tiene
+ * las que se guardaron con la pieza y no las devuelve, así que no hay nada que exigir de nuevo.
+ */
+const OPCIONES_DE_RELLENO: OpcionesTikTok = {
+  privacyLevel: PRIVACIDAD_PUBLICA,
+  allowComment: false,
+  allowDuet: false,
+  allowStitch: false,
+  contentPreviewConfirmed: true,
+  expressConsentGiven: true,
+}
+
+export interface ResultadoEdicion {
+  /** Solo lo que cambió (más la `accion` si no es `guardar`). `null` si hay problemas. */
+  cambios: CambiosProgramada | null
+  problemas: string[]
+  /** Se pidió guardar y no cambió nada. */
+  sinCambios: boolean
+}
+
+const mismosMedios = (a: readonly Medio[], b: readonly Medio[]) =>
+  a.length === b.length && a.every((m, i) => m.url === b[i]?.url && m.tipo === b[i]?.tipo)
+
+/**
+ * Arma el cuerpo de `PATCH /api/programadas/{id}` con lo mínimo que cambió, validando antes con las
+ * mismas reglas que al crear: guardar un borrador pide poco; guardar una programada, programar o
+ * publicar ahora piden la pieza completa. Reprogramar es `guardar` con otra fecha.
+ */
+export function armarCambios(
+  v: ValoresPieza,
+  inicial: ValoresPieza,
+  pieza: Programada,
+  red: Red | undefined,
+  accion: AccionDeEdicion,
+  ahora: number,
+): ResultadoEdicion {
+  const opcionesTocadas = JSON.stringify(v.opciones) !== JSON.stringify(inicial.opciones)
+  const paraValidar: ValoresPieza = {
+    ...v,
+    opciones: red === 'tiktok' && !opcionesTocadas ? OPCIONES_DE_RELLENO : v.opciones,
+  }
+  const reglas: AccionDeEnvio =
+    accion === 'guardar' ? (pieza.estado === 'programada' ? 'programar' : 'borrador') : accion
+  const r = armarCuerpo(paraValidar, red, reglas, ahora)
+  if (!r.cuerpo) return { cambios: null, problemas: r.problemas, sinCambios: false }
+  const c = r.cuerpo
+  const cambios: CambiosProgramada = {}
+  if (accion !== 'guardar') cambios.accion = accion
+  if (c.tipo !== pieza.formato) cambios.tipo = c.tipo
+  if ((c.texto ?? null) !== (pieza.texto ?? null)) cambios.texto = c.texto ?? null
+  if (!mismosMedios(c.medios, pieza.medios)) cambios.medios = c.medios
+  if (accion !== 'publicar_ahora') {
+    // El formulario trabaja al minuto: segundos y milésimas no cuentan como un cambio de fecha.
+    const alMinuto = (iso: string | null) => (iso ? Math.floor(Date.parse(iso) / 60_000) : null)
+    if (alMinuto(pieza.fecha) !== alMinuto(c.programadaPara ?? null))
+      cambios.programadaPara = c.programadaPara ?? null
+  }
+  if (opcionesTocadas && c.opciones) cambios.opciones = c.opciones
+  return { cambios, problemas: [], sinCambios: Object.keys(cambios).length === 0 }
 }
