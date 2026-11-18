@@ -10,9 +10,18 @@ export type Tipo = ItemCalendario['tipo']
 
 const conFecha = (p: Programada): p is ProgramadaConFecha => p.fecha !== null
 
-/** Las piezas que van al calendario: con día y sin las canceladas. */
-export const programadasDelCalendario = (datos: CalendarioMes): ProgramadaConFecha[] =>
-  (datos.programadas ?? []).filter(conFecha).filter((p) => p.estado !== 'cancelada')
+/**
+ * Las piezas que van al calendario: con día, sin las canceladas y sin las que ya salen como
+ * publicación con sus métricas (`itemId` en `publicadas`): el backend ya las omite, pero la misma
+ * publicación nunca se dibuja dos veces.
+ */
+export const programadasDelCalendario = (datos: CalendarioMes): ProgramadaConFecha[] => {
+  const publicadas = new Set(datos.publicadas.map((p) => p.id))
+  return (datos.programadas ?? [])
+    .filter(conFecha)
+    .filter((p) => p.estado !== 'cancelada')
+    .filter((p) => !(p.itemId && publicadas.has(p.itemId)))
+}
 
 /** «Reel», «Carrusel», «Fotos»: el formato de cualquier item, como se lee en pantalla. */
 export const formatoDe = (it: ItemCalendario): string =>
