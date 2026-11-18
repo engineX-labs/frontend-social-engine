@@ -15,6 +15,7 @@ import { Grilla, GrillaEsqueleto, type Rendimientos } from './Grilla'
 import { Resumen, ResumenEsqueleto } from './Resumen'
 import { SinFecha } from './SinFecha'
 import { TarjetaFidel } from './TarjetaFidel'
+import { useSeguimientoDePublicacion } from '@/features/publicar/useSeguimientoDePublicacion'
 import { useAncho } from '@/lib/useAncho'
 import { useEsEscritorio } from '@/lib/useMedia'
 
@@ -52,6 +53,12 @@ export function CalendarioView() {
 
   const ir = (cambio: Partial<CalendarioSearch>) =>
     void navigate({ search: (prev) => ({ ...prev, ...cambio }) })
+  // Refresca mientras haya piezas por resolverse y avisa cuando una se publicó o falló.
+  useSeguimientoDePublicacion({
+    datos: data,
+    abrir: (p) =>
+      ir({ item: p.id, ...(p.fecha ? { mes: claveMes(p.fecha), dia: claveDia(p.fecha) } : {}) }),
+  })
 
   const vista = useMemo(
     () => (data ? { ...data, programadas: conPublicar ? (data.programadas ?? []) : [] } : null),
