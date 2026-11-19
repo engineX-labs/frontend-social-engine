@@ -72,7 +72,15 @@ async function mezclarEstados() {
   })
 }
 
-afterEach(() => vi.unstubAllEnvs())
+// Los textos de estos tests dependen del día de hoy (p. ej. «jueves 19 de noviembre: … 1 sugerida»):
+// se congela solo `Date` al 18/11/2026 (los timers siguen reales) para que no se rompan al pasar el día.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-18T18:00:00Z') })
+})
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllEnvs()
+})
 
 describe('Calendario con piezas programadas (escritorio)', () => {
   beforeEach(() => prender())
