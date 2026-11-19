@@ -1,15 +1,17 @@
 import { calendarioHandlers } from './calendario'
 import { chatHandlers } from './chat'
+import { contextoHandlers } from './contexto'
 import { publicacionHandlers } from './publicacion'
 import { registroHandlers } from './registro'
 import { handlersPara } from './index'
 
 describe('handlersPara', () => {
-  it('"todo" simula calendario, publicar, alta y chat (demo y tests)', () => {
+  it('"todo" simula calendario, publicar, alta, contexto y chat (demo y tests)', () => {
     expect(handlersPara('todo')).toEqual([
       ...calendarioHandlers,
       ...publicacionHandlers,
       ...registroHandlers,
+      ...contextoHandlers,
       ...chatHandlers,
     ])
   })

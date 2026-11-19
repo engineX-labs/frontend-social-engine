@@ -128,6 +128,21 @@ describe('apiFetch', () => {
     })
   })
 
+  it('un 422 con problemas por campo los conserva por id', async () => {
+    server.use(
+      http.put('*/api/prueba', () =>
+        HttpResponse.json(
+          { detalle: 'Hay respuestas inválidas', problemas: { rubro: 'Falta', zona: 3 } },
+          { status: 422 },
+        ),
+      ),
+    )
+    const error = await apiFetch('/api/prueba', { method: 'PUT', json: {} }).catch(
+      (e: unknown) => e,
+    )
+    expect(error).toMatchObject({ problemas: [], problemasPorCampo: { rubro: 'Falta' } })
+  })
+
   it('un error sin cuerpo legible usa el código de estado', async () => {
     server.use(http.get('*/api/prueba', () => new HttpResponse('caído', { status: 502 })))
     const error = await apiFetch('/api/prueba').catch((e: unknown) => e)

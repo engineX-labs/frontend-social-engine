@@ -4,17 +4,24 @@ export class ApiError extends Error {
   status: number
   /** Los problemas de un 422 de reglas (`{ detalle, problemas }`), en castellano. */
   problemas: string[]
+  /** Los problemas de un 422 por campo (`{ detalle, problemas: { [id]: mensaje } }`), p. ej. el cuestionario. */
+  problemasPorCampo: Record<string, string>
   /** Código estable del error si el backend lo manda (hoy los 409 solo traen `detalle`). */
   codigo: string | null
   constructor(
     status: number,
     message: string,
-    extra?: { problemas?: string[]; codigo?: string | null },
+    extra?: {
+      problemas?: string[]
+      problemasPorCampo?: Record<string, string>
+      codigo?: string | null
+    },
   ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.problemas = extra?.problemas ?? []
+    this.problemasPorCampo = extra?.problemasPorCampo ?? {}
     this.codigo = extra?.codigo ?? null
   }
 }
@@ -51,6 +58,13 @@ export async function cabecerasConAuth(base?: HeadersInit): Promise<Headers> {
   return cabeceras
 }
 
+function problemasPorCampo(valor: unknown): Record<string, string> {
+  if (valor === null || typeof valor !== 'object' || Array.isArray(valor)) return {}
+  return Object.fromEntries(
+    Object.entries(valor).filter((e): e is [string, string] => typeof e[1] === 'string'),
+  )
+}
+
 /** El error de una respuesta que no fue ok. Un 401 además avisa para volver al ingreso. */
 export async function errorDeRespuesta(res: Response): Promise<ApiError> {
   const cuerpo = (await res.json().catch(() => null)) as {
@@ -66,6 +80,7 @@ export async function errorDeRespuesta(res: Response): Promise<ApiError> {
       problemas: Array.isArray(cuerpo?.problemas)
         ? cuerpo.problemas.filter((p): p is string => typeof p === 'string')
         : [],
+      problemasPorCampo: problemasPorCampo(cuerpo?.problemas),
       codigo: typeof cuerpo?.codigo === 'string' ? cuerpo.codigo : null,
     },
   )
