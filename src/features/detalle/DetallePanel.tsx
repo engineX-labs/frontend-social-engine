@@ -17,7 +17,9 @@ import { atraparTab } from '@/lib/foco'
 import { useMedia } from '@/lib/useMedia'
 import { DetalleIdea } from './DetalleIdea'
 import { DetallePublicada } from './DetallePublicada'
+import { PanelProgramada } from './PanelProgramada'
 import { mesDe } from './formato'
+import { useResolverItem } from './resolverItem'
 
 const ruta = getRouteApi('/')
 
@@ -29,10 +31,23 @@ const SALIDA = { duration: 0.2, ease: [0.4, 0, 1, 1] } as const
 /** Panel de detalle: lateral ≥820px, bottom sheet en móvil. Se abre con `?item=<id>`. */
 export function DetallePanel() {
   const { item } = ruta.useSearch()
-  return <AnimatePresence>{item ? <Panel key="detalle" id={item} /> : null}</AnimatePresence>
+  return (
+    <AnimatePresence>{item ? <DetalleDeItem key="detalle" id={item} /> : null}</AnimatePresence>
+  )
 }
 
-function Panel({ id }: { id: string }) {
+/**
+ * Una pieza guardada desde la app (borrador, programada…) tiene su propio panel; una publicada o una
+ * idea, el de siempre. Con publicar apagado todo es lo de siempre y no se pregunta nada de más.
+ */
+function DetalleDeItem({ id }: { id: string }) {
+  const resolucion = useResolverItem(id)
+  if (resolucion.tipo === 'programada')
+    return <PanelProgramada id={id} inicial={resolucion.pieza} />
+  return <Panel id={id} resolviendo={resolucion.tipo === 'cargando'} />
+}
+
+function Panel({ id, resolviendo = false }: { id: string; resolviendo?: boolean }) {
   const navigate = ruta.useNavigate()
   // Con scrim (<1440px) el panel es modal; en escritorio ancho convive con la grilla.
   const modal = !useMedia('(min-width: 1440px)', false)
@@ -153,7 +168,7 @@ function Panel({ id }: { id: string }) {
         </header>
 
         <div className="flex-1 overflow-y-auto overscroll-contain border-t border-hairline px-5 py-5">
-          {!item && itemQ.isPending ? (
+          {!item && (itemQ.isPending || resolviendo) ? (
             <CargandoDetalle />
           ) : !item ? (
             <EstadoError

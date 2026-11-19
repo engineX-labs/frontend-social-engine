@@ -1,5 +1,5 @@
 import { calcularResumen, conRendimiento, esNoche } from '@/domain/metrics'
-import type { CalendarioMes, Formato, Idea, Publicada } from '@/domain/types'
+import type { CalendarioMes, Formato, FormatoIdea, Idea, Publicada } from '@/domain/types'
 import { aUtcDesdeBA, claveMes, diaLargo, partesBA } from '@/lib/fecha'
 import { portadaDemo } from './portadas'
 
@@ -15,7 +15,7 @@ export function semanasDeDesplazo(ahora: number, fijo: boolean): number {
 }
 const DESPLAZO_MS = semanasDeDesplazo(Date.now(), import.meta.env.MODE === 'test') * SEMANA_MS
 
-function fechaDemo(mes: number, dia: number, h: number, min: number): string {
+export function fechaDemo(mes: number, dia: number, h: number, min: number): string {
   return new Date(Date.parse(aUtcDesdeBA(2026, mes, dia, h, min)) + DESPLAZO_MS).toISOString()
 }
 
@@ -105,7 +105,7 @@ export const PUBLICADAS: Publicada[] = conRendimiento(PUBLICADAS_BASE, resumenGl
   },
 )
 
-const COPY: Record<Formato, string[]> = {
+const COPY: Record<FormatoIdea, string[]> = {
   Reel: [
     'Mirá cómo cambia este look en diez segundos. Guardalo para tu próxima salida.',
     'Una prenda, tres formas de usarla. ¿Con cuál te quedás?',
@@ -137,7 +137,7 @@ function porQue(formato: Formato, h: number): string[] {
   ]
 }
 
-const IDEAS_RAW: [number, number, number, Formato, string][] = [
+const IDEAS_RAW: [number, number, number, FormatoIdea, string][] = [
   [17, 19, 0, 'Carrusel', 'Cinco looks, uno por día. La primera imagen con la prenda más fuerte.'],
   [19, 20, 0, 'Reel', 'Mostrá la prenda puesta en los primeros 2 segundos.'],
   [22, 12, 0, 'Foto', 'Luz natural, prenda de cuerpo entero y un solo fondo liso.'],

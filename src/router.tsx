@@ -3,6 +3,7 @@ import { Layout } from '@/app/Layout'
 import { validarCalendarioSearch, validarChatSearch } from '@/app/search'
 import { CalendarioView } from '@/features/calendario/CalendarioView'
 import { DetallePanel } from '@/features/detalle/DetallePanel'
+import { PanelPublicar } from '@/features/publicar/PanelPublicar'
 
 const rootRoute = createRootRoute({ component: Layout })
 
@@ -15,6 +16,7 @@ const calendarioRoute = createRoute({
     <>
       <CalendarioView />
       <DetallePanel />
+      <PanelPublicar />
     </>
   ),
 })
