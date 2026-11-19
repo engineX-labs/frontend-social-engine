@@ -1,5 +1,6 @@
 import type { ComercioPropio, EstadoComercio, RedDeConexion, Yo } from '@/api/registro'
 import { NOMBRE_COMERCIO_MAX } from '@/domain/registro'
+import { verContexto } from './contexto'
 import type { Red } from '@/domain/types'
 
 /**
@@ -7,7 +8,7 @@ import type { Red } from '@/domain/types'
  * `plans/registro-abierto.md` (mismos estados, códigos y mensajes) para el demo y los tests.
  *
  * El `estado` del comercio se calcula como en el backend: sin cuenta de Zernio → `en_preparacion`;
- * con cuenta y sin redes conectadas → `sin_redes`; con alguna red conectada → `activo`.
+ * con cuenta y sin redes conectadas → `sin_redes`; con alguna red → `activo` (también si una pide reconectar).
  */
 export class ErrorRegistroMock extends Error {
   status: number
@@ -81,11 +82,18 @@ export function reiniciarRegistro() {
 
 export function estadoDelComercio(): EstadoComercio {
   if (!estado.cuentaLista) return 'en_preparacion'
-  return estado.redes.some((r) => r.estado === 'conectada') ? 'activo' : 'sin_redes'
+  // Como el backend: con alguna red (aunque pida reconectar) el comercio está activo.
+  return estado.redes.length > 0 ? 'activo' : 'sin_redes'
 }
 
 function comercioActual(): ComercioPropio | null {
-  return estado.comercio && { ...estado.comercio, estado: estadoDelComercio() }
+  return (
+    estado.comercio && {
+      ...estado.comercio,
+      estado: estadoDelComercio(),
+      contexto: verContexto().estado,
+    }
+  )
 }
 
 export function yo(): Yo {

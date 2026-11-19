@@ -14,11 +14,12 @@ import { server } from '@/mocks/server'
 import { clerkPrueba } from '@/test/clerk'
 import { Acceso } from './Acceso'
 import { Entrada } from './Entrada'
-import type { PasoDeEntrada } from './pasosDeEntrada'
+import { guardarContexto } from '@/mocks/contexto'
+import { PASOS_DE_ENTRADA, type PasoDeEntrada } from './pasosDeEntrada'
 
 vi.mock('@/lib/navegar', () => ({ irA: vi.fn() }))
 
-function montar(pasos?: readonly PasoDeEntrada[]) {
+function montar(pasos: readonly PasoDeEntrada[] = []) {
   const consultas = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const utilidades = render(
     <QueryClientProvider client={consultas}>
@@ -252,5 +253,48 @@ describe('Entrada: pasos extra (punto de extensión del cuestionario)', () => {
     montar([PasoPendiente])
     expect(await screen.findByRole('heading', { name: 'Te damos la bienvenida' })).toBeVisible()
     expect(screen.queryByText(/Paso extra/)).toBeNull()
+  })
+})
+
+describe('Entrada: el cuestionario de contexto (paso real)', () => {
+  const rubroYObjetivo = { rubro: 'gastronomia', objetivo: 'seguidores' }
+
+  /** Contesta las dos obligatorias; después aparece «Saltear el resto». */
+  async function contestarObligatorias() {
+    await userEvent.click(await screen.findByRole('radio', { name: 'Gastronomía' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await userEvent.click(await screen.findByRole('radio', { name: 'Ganar seguidores' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+  }
+
+  it('con el cuestionario pendiente va después de la bienvenida y antes del calendario', async () => {
+    fijarRegistro('activo')
+    montar(PASOS_DE_ENTRADA)
+    expect(await screen.findByText(/rubro/i)).toBeInTheDocument()
+    expect(screen.queryByText('el calendario')).toBeNull()
+  })
+
+  it('al saltearlo deja seguir al calendario', async () => {
+    fijarRegistro('activo')
+    montar(PASOS_DE_ENTRADA)
+    await contestarObligatorias()
+    await userEvent.click(await screen.findByRole('button', { name: 'Saltear el resto' }))
+    expect(await screen.findByText('el calendario')).toBeInTheDocument()
+  })
+
+  it('si ya lo contestó no lo vuelve a mostrar', async () => {
+    guardarContexto({ respuestas: rubroYObjetivo })
+    fijarRegistro('activo')
+    montar(PASOS_DE_ENTRADA)
+    expect(await screen.findByText('el calendario')).toBeInTheDocument()
+  })
+
+  it('también se contesta mientras la cuenta está en preparación', async () => {
+    fijarRegistro('en_preparacion')
+    montar(PASOS_DE_ENTRADA)
+    expect(await screen.findByText(/rubro/i)).toBeInTheDocument()
+    await contestarObligatorias()
+    await userEvent.click(await screen.findByRole('button', { name: 'Saltear el resto' }))
+    expect(await screen.findByRole('heading', { name: /Estamos preparando/ })).toBeVisible()
   })
 })
