@@ -1,6 +1,7 @@
 import type { ModoMocks } from '@/api/http'
 import { calendarioHandlers } from './calendario'
 import { chatHandlers } from './chat'
+import { contextoHandlers } from './contexto'
 import { publicacionHandlers } from './publicacion'
 import { registroHandlers } from './registro'
 
@@ -8,6 +9,7 @@ export const handlers = [
   ...calendarioHandlers,
   ...publicacionHandlers,
   ...registroHandlers,
+  ...contextoHandlers,
   ...chatHandlers,
 ]
 

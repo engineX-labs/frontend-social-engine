@@ -15,7 +15,12 @@ describe('contrato del alta (mocks)', () => {
     for (const e of ['en_preparacion', 'sin_redes', 'activo'] as const) {
       fijarRegistro(e)
       expect(await apiFetch('/api/yo')).toEqual({
-        comercio: { id: expect.any(String), nombre: 'Casa Álamo', estado: e },
+        comercio: {
+          id: expect.any(String),
+          nombre: 'Casa Álamo',
+          estado: e,
+          contexto: 'pendiente',
+        },
       })
     }
   })

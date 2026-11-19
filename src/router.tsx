@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/
 import { Layout } from '@/app/Layout'
 import { validarCalendarioSearch, validarChatSearch } from '@/app/search'
 import { CalendarioView } from '@/features/calendario/CalendarioView'
+import { PerfilNegocio } from '@/features/contexto/PerfilNegocio'
 import { DetallePanel } from '@/features/detalle/DetallePanel'
 import { PanelPublicar } from '@/features/publicar/PanelPublicar'
 
@@ -31,7 +32,13 @@ const chatRoute = createRoute({
   },
 })
 
-const routeTree = rootRoute.addChildren([calendarioRoute, chatRoute])
+const perfilRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/perfil',
+  component: PerfilNegocio,
+})
+
+const routeTree = rootRoute.addChildren([calendarioRoute, chatRoute, perfilRoute])
 
 export function crearRouter(history?: Parameters<typeof createRouter>[0]['history']) {
   return createRouter({ routeTree, history, defaultPreload: 'intent' })

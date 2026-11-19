@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { alNoAutorizado, registrarProveedorDeToken } from '@/api/auth'
 import { Marca } from '@/components/Marca'
+import { borrarBorrador } from '@/features/contexto/borrador'
 import { MODO_DE_REGISTRO, type ModoDeRegistro } from './modoDeRegistro'
 
 /** Clave pública de Clerk (`pk_...`). No es secreta; la clave secreta nunca va al front. */
@@ -64,7 +65,10 @@ function Puerta({ children, registro }: { children: ReactNode; registro: ModoDeR
 
   // Sin sesión se vacía la caché: el próximo usuario de esta pestaña no puede ver datos del anterior.
   useEffect(() => {
-    if (isLoaded && !isSignedIn) consultas.clear()
+    if (isLoaded && !isSignedIn) {
+      consultas.clear()
+      borrarBorrador() // el borrador del cuestionario es del usuario anterior
+    }
   }, [isLoaded, isSignedIn, consultas])
 
   // Al volver a entrar se quita el aviso de "sesión vencida" (se ajusta durante el render).

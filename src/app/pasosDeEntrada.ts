@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
 import type { ComercioPropio } from '@/api/registro'
+import { PasoCuestionario } from '@/features/contexto/PasoCuestionario'
 
 /**
  * PUNTO DE EXTENSIÓN de la pantalla de entrada (`Entrada.tsx`).
@@ -13,8 +14,8 @@ import type { ComercioPropio } from '@/api/registro'
  * según el estado del comercio (`en_preparacion` / `sin_redes`) → calendario. Los pasos van antes
  * de «en preparación» a propósito: se pueden completar mientras se prepara la cuenta.
  *
- * Para enganchar el cuestionario de contexto (`plans/cuestionario-contexto.md`, Fase 5): crear su
- * componente con esta forma y sumarlo a `PASOS_DE_ENTRADA`. No hay que tocar nada más.
+ * Hoy el único paso es el cuestionario de contexto (`features/contexto/PasoCuestionario.tsx`).
+ * Para sumar otro: crear su componente con esta forma y agregarlo a `PASOS_DE_ENTRADA`.
  */
 export interface PropsDePaso {
   comercio: ComercioPropio
@@ -23,5 +24,5 @@ export interface PropsDePaso {
 
 export type PasoDeEntrada = ComponentType<PropsDePaso>
 
-/** Hoy vacía: el cuestionario se suma acá. */
-export const PASOS_DE_ENTRADA: readonly PasoDeEntrada[] = []
+/** Cuestionario de contexto (`plans/cuestionario-contexto.md`, Fase 5). Otros pasos se suman acá. */
+export const PASOS_DE_ENTRADA: readonly PasoDeEntrada[] = [PasoCuestionario]

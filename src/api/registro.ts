@@ -5,10 +5,14 @@ import { apiFetch } from './http'
 /** Estado de la cuenta de un comercio (lo calcula el backend; el front solo lo lee). */
 export type EstadoComercio = 'en_preparacion' | 'sin_redes' | 'activo'
 
+/** El cuestionario de contexto (`GET /api/contexto`); `/api/yo` lo adelanta para decidir la entrada. */
+export type EstadoContexto = 'pendiente' | 'completo' | 'salteado'
+
 export interface ComercioPropio {
   id: string
   nombre: string
   estado: EstadoComercio
+  contexto: EstadoContexto
 }
 
 /** `GET /api/yo`: `comercio` es `null` para un usuario que todavía no hizo la bienvenida. */
