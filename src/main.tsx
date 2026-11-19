@@ -5,6 +5,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MODO_MOCKS, reintentarConsulta } from '@/api/http'
 import { Acceso } from '@/app/Acceso'
+import { Entrada } from '@/app/Entrada'
 import { crearRouter } from './router'
 import './index.css'
 
@@ -24,7 +25,10 @@ async function iniciar() {
         <Acceso>
           {/* reducedMotion="user": con "reducir movimiento" quedan solo los fundidos. */}
           <MotionConfig reducedMotion="user">
-            <RouterProvider router={router} />
+            {/* Entrada decide qué ve quien recién entra; el calendario solo con la cuenta activa. */}
+            <Entrada>
+              <RouterProvider router={router} />
+            </Entrada>
           </MotionConfig>
         </Acceso>
       </QueryClientProvider>
