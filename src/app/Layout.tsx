@@ -1,6 +1,6 @@
 import { UserButton } from '@clerk/react'
-import { Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { Moon, Sun } from 'lucide-react'
+import { Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Moon, Store, Sun } from 'lucide-react'
 import { Toaster } from 'sonner'
 import { USAR_MOCKS } from '@/api/http'
 import { Marca } from '@/components/Marca'
@@ -26,6 +26,7 @@ export function Layout() {
 function Marco() {
   const { tema, alternar } = useTheme()
   const { escritorio } = useFidel()
+  const navegar = useNavigate()
   // En escritorio ancho el panel de detalle convive con la grilla: se reserva su espacio.
   const conPanel = useRouterState({
     select: (s) =>
@@ -67,7 +68,15 @@ function Marco() {
               <Moon className="size-4" aria-hidden="true" />
             )}
           </Boton>
-          <UserButton />
+          <UserButton>
+            <UserButton.MenuItems>
+              <UserButton.Action
+                label="Perfil del negocio"
+                labelIcon={<Store className="size-4" aria-hidden="true" />}
+                onClick={() => void navegar({ to: '/perfil' })}
+              />
+            </UserButton.MenuItems>
+          </UserButton>
         </div>
       </header>
       <div className="flex">

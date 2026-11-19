@@ -7,7 +7,8 @@ Frontend de **social engine** (engineX): calendario de publicaciones e ideas y c
 - `src/`: app React (un solo dashboard: calendario + Fidel en barra lateral izquierda en escritorio y hoja con botón flotante en móvil; `features/chat/FidelProvider.tsx` guarda la conversación; `main.tsx`, `index.css` con los tokens de engineX, `lib/utils.ts`, `test/setup.ts`).
 - `public/fonts/`: Plus Jakarta Sans y JetBrains Mono (copiadas de https://engine.nlabs.com.ar/).
 - `prototipos/`: HTML de referencia (calendario, pizarrón). No forman parte del build.
-- `plans/`: planes de trabajo (`plans/frontend-calendario.md`, aprobado).
+- `src/features/contexto/`: cuestionario de contexto y perfil de marca (ver «Cuestionario y perfil de marca»).
+- `plans/`: planes de trabajo (`plans/frontend-calendario.md`, `plans/cuestionario-contexto.md`, aprobados).
 - `.github/workflows/ci.yml`: lint, format, test y build en cada PR.
 - `vercel.json`: build `npm run build`, salida `dist`, SPA fallback.
 
@@ -22,7 +23,7 @@ Frontend de **social engine** (engineX): calendario de publicaciones e ideas y c
 
 ## Stack (Notion: "Stack social engine")
 
-Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, Clerk (`@clerk/react`, login), React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Instalados hoy: Tailwind, TanStack Router/Query, MSW, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. React Hook Form + Zod se usan en la bienvenida (`features/registro/Bienvenida.tsx`). Pendientes (se suman cuando se usen): openapi-typescript/openapi-fetch (cuando exista el esquema).
+Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, Clerk (`@clerk/react`, login), React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Instalados hoy: Tailwind, TanStack Router/Query, MSW, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. React Hook Form + Zod (con `@hookform/resolvers`) se usan en la bienvenida (`features/registro/Bienvenida.tsx`) y en los formularios del cuestionario y del perfil (`features/contexto/`). Pendientes (se suman cuando se usen): openapi-typescript/openapi-fetch (cuando exista el esquema).
 
 ## Datos y mocks
 
@@ -40,6 +41,12 @@ Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`
   - **Punto de extensión (cuestionario):** `src/app/pasosDeEntrada.ts`. Un paso es un componente envoltorio `({ comercio, children })` que muestra su pantalla mientras falte algo y devuelve `children` cuando no; se suma a `PASOS_DE_ENTRADA`. Orden: bienvenida → pasos extra → pantalla según estado → calendario.
   - **Mock de la entrada:** sin `VITE_API_URL`, `VITE_MOCK_ESTADO` (`sin_comercio`, `en_preparacion`, `sin_redes`, `activo`; por defecto `activo`) fija desde dónde arranca. En los tests: `fijarRegistro(...)`, `cargarCuentaDeZernio()`, `marcarParaReconectar(...)` de `mocks/registro.ts`.
   - **Correr los tests con un `.env.local` que apunta al backend:** `VITE_API_URL` y `VITE_PUBLICACION_HABILITADA` del `.env.local` sacan a los tests del modo mock. Correr con `VITE_API_URL= VITE_PUBLICACION_HABILITADA= npm test`.
+- **Cuestionario y perfil de marca** (`plans/cuestionario-contexto.md`, fases 3 y 4; contrato en `CONTRATO-API.md` del backend): `GET/PUT /api/contexto` y `GET/PUT /api/perfil-marca` + `POST /api/perfil-marca/generar`. Capas: `domain/contexto.ts` y `domain/perfilMarca.ts` (tipos, orden de preguntas, esquema Zod armado **desde el catálogo**: el front no hardcodea preguntas), `api/contexto.ts` (consultas y mutaciones; claves `['contexto']` y `['perfil-marca']`), `mocks/contexto.ts` + `mocks/handlers/contexto.ts` (backend en memoria con las 9 preguntas, las mismas validaciones y el límite de 3 generaciones por día; `configurarPerfilMock` arma escenarios). Se reinicia en cada test (`reiniciarContexto`).
+  - Entradas para enganchar (la integración con `/api/yo` y la pantalla de entrada es la Fase 5, no está hecha): `<Cuestionario onTerminar={(estado) => …} />` (una pregunta por pantalla; las obligatorias primero; «Saltear», «Saltear el resto» manda `saltear: true`), `<PerfilMarca />` (la sección «Esto es lo que vimos en tus publicaciones», para ofrecerla cuando haya redes) y `<PerfilNegocio />`, la ruta `/perfil` («Perfil del negocio»: respuestas editables + perfil), con acceso desde el menú del usuario (`UserButton.Action` en `Layout.tsx`).
+  - Un 422 de `PUT /api/contexto` trae `problemas: { [id]: mensaje }`: `ApiError.problemasPorCampo` lo conserva y cada mensaje se muestra en su pregunta.
+  - **Borrador:** el cuestionario guarda lo escrito y el paso en `sessionStorage` (`contexto:borrador`, con try/catch, descartado si cambia `version`), no en un PUT parcial: recargar no pierde nada y el servidor no recibe respuestas a medias. Se borra al guardar; `borrarBorrador()` (`features/contexto/borrador.ts`) conviene llamarlo al cerrar sesión.
+  - «Otro» (`permiteOtro`): la respuesta es el texto escrito (un string que no está en `opciones`). Solo lo interpretado del perfil (`temas`, `tono`, `estiloVisual`, `publico`) se edita; lo calculado son cifras del backend.
+  - Perfil generándose: `refetchInterval` de TanStack Query cada 3 s solo mientras `estado === 'generando'` (se corta al terminar, al desmontar o con la pestaña oculta).
 - Errores de la API: 401 ("tu sesión venció") y 403 ("tu usuario todavía no tiene un comercio asignado") no se reintentan ni ofrecen "Reintentar". `analisis` llega vacío hasta S3 y `ideas` vacías hasta S4; la UI lo tolera.
 - Contrato de chat (SSE): `POST /api/chat` con `{ mensajes: [{rol, texto}], itemId? }`; responde `text/event-stream` con `data: {"delta":"..."}` y `data: [DONE]`; errores a mitad de stream con `event: error`.
 

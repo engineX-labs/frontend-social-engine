@@ -51,6 +51,27 @@ export const moduloClerkDePrueba = {
   SignIn: () => <div data-testid="clerk-sign-in" />,
   SignUp: () => <div data-testid="clerk-sign-up" />,
   Waitlist: () => <div data-testid="clerk-waitlist" />,
-  UserButton: () => <div data-testid="clerk-user-button" />,
+  UserButton: Object.assign(
+    ({ children }: { children?: ReactNode }) => (
+      <div data-testid="clerk-user-button">{children}</div>
+    ),
+    {
+      // En Clerk las acciones del menú son parte de su menú desplegable; el doble las deja a la vista
+      // para poder probar que existen y navegan.
+      MenuItems: ({ children }: { children?: ReactNode }) => <>{children}</>,
+      Action: ({
+        label,
+        onClick,
+      }: {
+        label: string
+        labelIcon?: ReactNode
+        onClick?: () => void
+      }) => (
+        <button type="button" onClick={onClick}>
+          {label}
+        </button>
+      ),
+    },
+  ),
   useAuth,
 }
