@@ -49,6 +49,8 @@ function useAuth() {
 export const moduloClerkDePrueba = {
   ClerkProvider: ({ children }: { children: ReactNode }) => children,
   SignIn: () => <div data-testid="clerk-sign-in" />,
+  SignUp: () => <div data-testid="clerk-sign-up" />,
+  Waitlist: () => <div data-testid="clerk-waitlist" />,
   UserButton: () => <div data-testid="clerk-user-button" />,
   useAuth,
 }

@@ -1,9 +1,10 @@
 import { esMX } from '@clerk/localizations'
-import { ClerkProvider, SignIn, useAuth } from '@clerk/react'
+import { ClerkProvider, SignIn, SignUp, useAuth, Waitlist } from '@clerk/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { alNoAutorizado, registrarProveedorDeToken } from '@/api/auth'
 import { Marca } from '@/components/Marca'
+import { MODO_DE_REGISTRO, type ModoDeRegistro } from './modoDeRegistro'
 
 /** Clave pública de Clerk (`pk_...`). No es secreta; la clave secreta nunca va al front. */
 export const CLAVE_CLERK = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
@@ -27,9 +28,17 @@ const apariencia = {
 /**
  * El login es obligatorio: sin sesión solo se ve la pantalla de ingreso. Todo lo de adentro
  * (la API, el router) se monta recién con una sesión válida. Los usuarios entran por invitación
- * (modo Invite-only en el panel de Clerk), así que acá no hay registro.
+ * (modo Invite-only en el panel de Clerk) salvo que `registro` pida lista de espera o registro abierto.
  */
-export function Acceso({ clave = CLAVE_CLERK, children }: { clave?: string; children: ReactNode }) {
+export function Acceso({
+  clave = CLAVE_CLERK,
+  registro = MODO_DE_REGISTRO,
+  children,
+}: {
+  clave?: string
+  registro?: ModoDeRegistro
+  children: ReactNode
+}) {
   if (!clave?.trim()) return <FaltaConfiguracion />
   return (
     <ClerkProvider
@@ -38,12 +47,12 @@ export function Acceso({ clave = CLAVE_CLERK, children }: { clave?: string; chil
       localization={esMX}
       appearance={apariencia}
     >
-      <Puerta>{children}</Puerta>
+      <Puerta registro={registro}>{children}</Puerta>
     </ClerkProvider>
   )
 }
 
-function Puerta({ children }: { children: ReactNode }) {
+function Puerta({ children, registro }: { children: ReactNode; registro: ModoDeRegistro }) {
   const { isLoaded, isSignedIn, getToken, signOut } = useAuth()
   const consultas = useQueryClient()
   const [vencida, setVencida] = useState(false)
@@ -81,7 +90,7 @@ function Puerta({ children }: { children: ReactNode }) {
   )
 
   if (!isLoaded) return <Cargando />
-  if (!isSignedIn) return <PantallaIngreso vencida={vencida} />
+  if (!isSignedIn) return <PantallaIngreso vencida={vencida} registro={registro} />
   return children
 }
 
@@ -99,7 +108,10 @@ function Cargando() {
   )
 }
 
-function PantallaIngreso({ vencida }: { vencida: boolean }) {
+function PantallaIngreso({ vencida, registro }: { vencida: boolean; registro: ModoDeRegistro }) {
+  const [vista, setVista] = useState<'ingreso' | 'registro'>('ingreso')
+  const puedeRegistrarse = registro !== 'invitacion'
+  const enRegistro = puedeRegistrarse && vista === 'registro'
   return (
     <main className="grid min-h-dvh place-items-center bg-surface px-4 py-10 text-ink">
       <div className="flex w-full max-w-[440px] flex-col items-center gap-6">
@@ -112,7 +124,31 @@ function PantallaIngreso({ vencida }: { vencida: boolean }) {
             Tu sesión venció. Volvé a ingresar.
           </p>
         )}
-        <SignIn routing="hash" fallbackRedirectUrl="/" />
+        {enRegistro ? (
+          registro === 'lista_de_espera' ? (
+            <Waitlist afterJoinWaitlistUrl="/" signInUrl="/" />
+          ) : (
+            <SignUp routing="hash" fallbackRedirectUrl="/" />
+          )
+        ) : (
+          <SignIn routing="hash" fallbackRedirectUrl="/" />
+        )}
+        {puedeRegistrarse && (
+          <p className="m-0 text-sm text-muted">
+            {enRegistro ? '¿Ya tenés acceso? ' : '¿Todavía no tenés cuenta? '}
+            <button
+              type="button"
+              onClick={() => setVista(enRegistro ? 'ingreso' : 'registro')}
+              className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-accent-ink underline"
+            >
+              {enRegistro
+                ? 'Ingresá'
+                : registro === 'lista_de_espera'
+                  ? 'Anotate en la lista de espera'
+                  : 'Creá tu cuenta'}
+            </button>
+          </p>
+        )}
       </div>
     </main>
   )
