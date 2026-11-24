@@ -9,7 +9,7 @@ const esquema = z.object({
   nombre: z
     .string()
     .trim()
-    .min(1, 'Escribí el nombre de tu comercio.')
+    .min(1, 'Escribí el nombre.')
     .max(NOMBRE_COMERCIO_MAX, `Hasta ${NOMBRE_COMERCIO_MAX} caracteres.`),
 })
 type Valores = z.infer<typeof esquema>
@@ -40,7 +40,7 @@ export function Bienvenida() {
       >
         <div className="flex flex-col gap-1.5">
           <label htmlFor="nombre-comercio" className="text-sm font-semibold">
-            Nombre del comercio
+            Nombre de la marca o proyecto
           </label>
           <input
             id="nombre-comercio"

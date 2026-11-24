@@ -31,15 +31,15 @@ const respuestas = (extra: object = {}) =>
     ),
   )
 
-describe('Perfil del negocio', () => {
+describe('Perfil de marca', () => {
   it('muestra las respuestas con sus etiquetas, lo no respondido y el perfil de marca', async () => {
     respuestas({ que_puede_producir: ['fotos_producto', 'carruseles'], tono: 'Rioplatense' })
     configurarPerfilMock({ perfil: perfilListoMock() })
     montar('/perfil')
     expect(
-      await screen.findByRole('heading', { name: 'Perfil del negocio', level: 1 }),
+      await screen.findByRole('heading', { name: 'Perfil de marca', level: 1 }),
     ).toBeInTheDocument()
-    const lista = await screen.findByText('¿Cuál es el rubro de tu negocio?')
+    const lista = await screen.findByText('¿Cuál es el rubro?')
     const bloque = lista.closest('dl')!
     expect(within(bloque).getByText('Gastronomía')).toBeInTheDocument()
     expect(within(bloque).getByText('Pedidos o reservas por WhatsApp')).toBeInTheDocument()
@@ -109,9 +109,9 @@ describe('Perfil del negocio', () => {
 
   it('está en el menú del usuario y lleva a /perfil', async () => {
     const router = montar('/')
-    await userEvent.click(await screen.findByRole('button', { name: 'Perfil del negocio' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Perfil de marca' }))
     expect(
-      await screen.findByRole('heading', { name: 'Perfil del negocio', level: 1 }),
+      await screen.findByRole('heading', { name: 'Perfil de marca', level: 1 }),
     ).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/perfil')
   })

@@ -71,7 +71,7 @@ function Marco() {
           <UserButton>
             <UserButton.MenuItems>
               <UserButton.Action
-                label="Perfil del negocio"
+                label="Perfil de marca"
                 labelIcon={<Store className="size-4" aria-hidden="true" />}
                 onClick={() => void navegar({ to: '/perfil' })}
               />

@@ -135,6 +135,7 @@
   --animate-aparecer: aparecer var(--dur-slow) var(--ease-out) both;
   --animate-brillo: brillo 1.4s linear infinite;
   --animate-latido: latido 1.6s var(--ease) infinite;
+  --animate-girar: girar 0.8s linear infinite;
   --animate-cursor: cursor 1s steps(2, start) infinite;
 }
 
@@ -153,6 +154,11 @@
   50% {
     transform: scale(1.08);
     filter: saturate(1.25) brightness(1.08);
+  }
+}
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
   }
 }
 @keyframes cursor {
