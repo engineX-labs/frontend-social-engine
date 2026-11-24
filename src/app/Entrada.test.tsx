@@ -37,7 +37,7 @@ describe('Entrada: un usuario sin comercio', () => {
   it('ve la bienvenida, no el aviso de 403 ni el calendario', async () => {
     montar()
     expect(await screen.findByRole('heading', { name: 'Te damos la bienvenida' })).toBeVisible()
-    expect(screen.getByLabelText('Nombre del comercio')).toBeInTheDocument()
+    expect(screen.getByLabelText('Nombre de la marca o proyecto')).toBeInTheDocument()
     expect(screen.queryByText(/todavía no tiene un comercio/)).toBeNull()
     expect(screen.queryByText('el calendario')).toBeNull()
   })
@@ -58,8 +58,8 @@ describe('Entrada: un usuario sin comercio', () => {
     montar()
     const usuario = userEvent.setup()
     await usuario.click(await screen.findByRole('button', { name: 'Continuar' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Escribí el nombre de tu comercio.')
-    await usuario.type(screen.getByLabelText('Nombre del comercio'), 'x'.repeat(81))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Escribí el nombre.')
+    await usuario.type(screen.getByLabelText('Nombre de la marca o proyecto'), 'x'.repeat(81))
     await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Hasta 80 caracteres.')
     expect(pedidos).toBe(0)
@@ -78,7 +78,10 @@ describe('Entrada: un usuario sin comercio', () => {
     )
     montar()
     const usuario = userEvent.setup()
-    await usuario.type(await screen.findByLabelText('Nombre del comercio'), '  Panadería Sol ')
+    await usuario.type(
+      await screen.findByLabelText('Nombre de la marca o proyecto'),
+      '  Panadería Sol ',
+    )
     await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(
       await screen.findByRole('heading', { name: 'Estamos preparando tu cuenta' }),
@@ -92,7 +95,7 @@ describe('Entrada: un usuario sin comercio', () => {
     )
     montar()
     const usuario = userEvent.setup()
-    await usuario.type(await screen.findByLabelText('Nombre del comercio'), 'Sol')
+    await usuario.type(await screen.findByLabelText('Nombre de la marca o proyecto'), 'Sol')
     await usuario.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByText('No pudimos crear tu comercio. Probá de nuevo.')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled()
@@ -259,12 +262,29 @@ describe('Entrada: pasos extra (punto de extensión del cuestionario)', () => {
 describe('Entrada: el cuestionario de contexto (paso real)', () => {
   const rubroYObjetivo = { rubro: 'gastronomia', objetivo: 'seguidores' }
 
-  /** Contesta las dos obligatorias; después aparece «Saltear el resto». */
-  async function contestarObligatorias() {
+  const siguiente = () => userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+  const escribir = async (texto: string) => {
+    await userEvent.type(await screen.findByRole('textbox'), texto)
+    await siguiente()
+  }
+
+  /** Contesta las nueve preguntas y aprieta «Terminar». */
+  async function contestarTodo() {
     await userEvent.click(await screen.findByRole('radio', { name: 'Gastronomía' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await siguiente()
     await userEvent.click(await screen.findByRole('radio', { name: 'Ganar seguidores' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await siguiente()
+    await escribir('Pan')
+    await escribir('Rosario')
+    await escribir('Familias')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Yo' }))
+    await siguiente()
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Fotos de producto' }))
+    await siguiente()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Cercano' }))
+    await siguiente()
+    await userEvent.type(await screen.findByRole('textbox'), 'Política')
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
   }
 
   it('con el cuestionario pendiente va después de la bienvenida y antes del calendario', async () => {
@@ -274,11 +294,10 @@ describe('Entrada: el cuestionario de contexto (paso real)', () => {
     expect(screen.queryByText('el calendario')).toBeNull()
   })
 
-  it('al saltearlo deja seguir al calendario', async () => {
+  it('al terminarlo deja seguir al calendario', async () => {
     fijarRegistro('activo')
     montar(PASOS_DE_ENTRADA)
-    await contestarObligatorias()
-    await userEvent.click(await screen.findByRole('button', { name: 'Saltear el resto' }))
+    await contestarTodo()
     expect(await screen.findByText('el calendario')).toBeInTheDocument()
   })
 
@@ -293,8 +312,7 @@ describe('Entrada: el cuestionario de contexto (paso real)', () => {
     fijarRegistro('en_preparacion')
     montar(PASOS_DE_ENTRADA)
     expect(await screen.findByText(/rubro/i)).toBeInTheDocument()
-    await contestarObligatorias()
-    await userEvent.click(await screen.findByRole('button', { name: 'Saltear el resto' }))
+    await contestarTodo()
     expect(await screen.findByRole('heading', { name: /Estamos preparando/ })).toBeVisible()
   })
 })

@@ -9,11 +9,11 @@ import { textoDeRespuesta, type Contexto } from '@/domain/contexto'
 import { FormularioRespuestas } from './FormularioRespuestas'
 import { PerfilMarca } from './PerfilMarca'
 
-/** «Perfil del negocio»: las respuestas del cuestionario y el perfil de marca, los dos editables. */
+/** «Perfil de marca»: las respuestas del cuestionario y el perfil de marca, los dos editables. */
 export function PerfilNegocio({ intervaloMs }: { intervaloMs?: number }) {
   return (
     <div className="mx-auto grid max-w-3xl gap-10 pb-8">
-      <h1 className="m-0 text-2xl font-extrabold">Perfil del negocio</h1>
+      <h1 className="m-0 text-2xl font-extrabold">Perfil de marca</h1>
       <Respuestas />
       <PerfilMarca intervaloMs={intervaloMs} />
     </div>

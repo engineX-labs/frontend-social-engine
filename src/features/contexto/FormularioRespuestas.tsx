@@ -15,7 +15,7 @@ import {
 } from '@/domain/contexto'
 import { CampoPregunta } from './CampoPregunta'
 
-/** Todas las preguntas juntas, para editar las respuestas desde «Perfil del negocio». */
+/** Todas las preguntas juntas, para editar las respuestas desde «Perfil de marca». */
 export function FormularioRespuestas({
   contexto,
   onListo,

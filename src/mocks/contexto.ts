@@ -15,7 +15,7 @@ export class ErrorContexto extends Error {
 export const PREGUNTAS_MOCK: Pregunta[] = [
   {
     id: 'rubro',
-    texto: '¿Cuál es el rubro de tu negocio?',
+    texto: '¿Cuál es el rubro?',
     tipo: 'opcion',
     obligatoria: true,
     opciones: [

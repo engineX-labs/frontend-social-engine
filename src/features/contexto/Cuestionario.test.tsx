@@ -32,12 +32,38 @@ async function contestarObligatorias() {
   await siguiente()
 }
 
+/** Contesta de la 3 a la 8 (texto, zona, público, quién publica, qué produce, tono). */
+async function contestarHastaLaUltima() {
+  await contestarObligatorias()
+  await titulo(/producto o servicio estrella/)
+  await userEvent.type(screen.getByRole('textbox'), 'Ramos')
+  await siguiente()
+  await titulo(/zona o ciudad/)
+  await userEvent.type(screen.getByRole('textbox'), 'Rosario')
+  await siguiente()
+  await titulo(/A quién le hablás/)
+  await userEvent.type(screen.getByRole('textbox'), 'Familias')
+  await siguiente()
+  await titulo(/Quién publica/)
+  await userEvent.click(screen.getByRole('radio', { name: 'Yo' }))
+  await siguiente()
+  await titulo(/Qué podés producir/)
+  await userEvent.click(screen.getByRole('checkbox', { name: 'Fotos de producto' }))
+  await siguiente()
+  await titulo(/tono/)
+  await userEvent.click(screen.getByRole('radio', { name: 'Cercano' }))
+  await siguiente()
+  await titulo(/evitar/)
+  await userEvent.type(screen.getByRole('textbox'), 'Política')
+}
+
 describe('Cuestionario', () => {
-  it('dibuja las preguntas del catálogo: las obligatorias primero, sin «Saltear»', async () => {
+  it('dibuja las preguntas del catálogo, todas obligatorias y sin «Saltear»', async () => {
     montar()
     expect(await titulo(/rubro/)).toBeInTheDocument()
-    expect(screen.getByText('Pregunta 1 de 9 · hace falta para empezar')).toBeInTheDocument()
-    expect(screen.getByText('Obligatoria')).toBeInTheDocument()
+    expect(screen.getByText('Pregunta 1 de 9')).toBeInTheDocument()
+    expect(screen.queryByText('Obligatoria')).toBeNull()
+    expect(screen.queryByText('Opcional')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Saltear' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Saltear el resto' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Atrás' })).toBeDisabled()
@@ -51,32 +77,17 @@ describe('Cuestionario', () => {
     expect(screen.getByText(/Pregunta 1 de 9/)).toBeInTheDocument()
   })
 
-  it('con las obligatorias contestadas, saltea el resto y guarda como salteado', async () => {
-    let cuerpo: unknown
-    server.use(
-      http.put('*/api/contexto', async ({ request }) => {
-        cuerpo = await request.json()
-        return HttpResponse.json({
-          version: 1,
-          estado: 'salteado',
-          preguntas: PREGUNTAS_MOCK,
-          respuestas: { rubro: 'gastronomia', objetivo: 'seguidores' },
-        } satisfies Contexto)
-      }),
-    )
-    const { onTerminar } = montar()
+  it('una pregunta que el catálogo marca como opcional tampoco se puede dejar vacía', async () => {
+    montar()
     await contestarObligatorias()
     await titulo(/producto o servicio estrella/)
-    expect(screen.getByText('Opcional')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Saltear el resto' }))
-    await waitFor(() => expect(onTerminar).toHaveBeenCalledWith('salteado'))
-    expect(cuerpo).toEqual({
-      respuestas: { rubro: 'gastronomia', objetivo: 'seguidores' },
-      saltear: true,
-    })
+    expect(screen.queryByRole('button', { name: /Saltear/ })).toBeNull()
+    await siguiente()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Esta pregunta es obligatoria')
+    expect(screen.getByText(/Pregunta 3 de 9/)).toBeInTheDocument()
   })
 
-  it('completa las nueve preguntas (con «Otro», varias opciones y saltear una) y termina como completo', async () => {
+  it('completa las nueve preguntas (con «Otro» y varias opciones) y termina como completo', async () => {
     let cuerpo: { saltear?: boolean; respuestas: Record<string, unknown> } | undefined
     server.use(
       http.put('*/api/contexto', async ({ request }) => {
@@ -104,8 +115,10 @@ describe('Cuestionario', () => {
     await userEvent.type(screen.getByRole('textbox'), 'Ramos de estación')
     await siguiente()
     await titulo(/zona o ciudad/)
-    await userEvent.click(screen.getByRole('button', { name: 'Saltear' }))
+    await userEvent.type(screen.getByRole('textbox'), 'Rosario')
+    await siguiente()
     await titulo(/A quién le hablás/)
+    await userEvent.type(screen.getByRole('textbox'), 'Familias')
     await siguiente()
     await titulo(/Quién publica/)
     await userEvent.click(screen.getByRole('radio', { name: 'Yo' }))
@@ -115,9 +128,10 @@ describe('Cuestionario', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Carruseles con texto' }))
     await siguiente()
     await titulo(/tono/)
+    await userEvent.click(screen.getByRole('radio', { name: 'Divertido' }))
     await siguiente()
     await titulo(/evitar/)
-    expect(screen.queryByRole('button', { name: 'Saltear el resto' })).toBeNull()
+    await userEvent.type(screen.getByRole('textbox'), 'Política')
     await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
     await waitFor(() => expect(onTerminar).toHaveBeenCalledWith('completo'))
     expect(cuerpo).toEqual({
@@ -125,8 +139,12 @@ describe('Cuestionario', () => {
         rubro: 'Florería',
         objetivo: 'venta_online',
         producto_estrella: 'Ramos de estación',
+        zona: 'Rosario',
+        publico: 'Familias',
         quien_publica: 'yo',
         que_puede_producir: ['fotos_producto', 'carruseles'],
+        tono: 'divertido',
+        evitar: 'Política',
       },
     })
   })
@@ -144,9 +162,8 @@ describe('Cuestionario', () => {
       ),
     )
     const { onTerminar } = montar()
-    await contestarObligatorias()
-    await titulo(/producto o servicio estrella/)
-    await userEvent.click(screen.getByRole('button', { name: 'Saltear el resto' }))
+    await contestarHastaLaUltima()
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
     expect(await titulo(/zona o ciudad/)).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toHaveTextContent('Máximo 80 caracteres')
     await siguiente()
@@ -157,11 +174,36 @@ describe('Cuestionario', () => {
   it('un error del servidor se informa y se puede reintentar sin perder las respuestas', async () => {
     server.use(http.put('*/api/contexto', () => new HttpResponse(null, { status: 500 })))
     const { onTerminar } = montar()
-    await contestarObligatorias()
-    await userEvent.click(await screen.findByRole('button', { name: 'Saltear el resto' }))
+    await contestarHastaLaUltima()
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos guardar')
     expect(onTerminar).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Saltear el resto' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Terminar' })).toBeEnabled()
+    expect(screen.getByRole('textbox')).toHaveValue('Política')
+  })
+
+  it('mientras guarda muestra la ruedita en lugar del formulario', async () => {
+    let soltar: () => void = () => {}
+    const espera = new Promise<void>((r) => (soltar = r))
+    server.use(
+      http.put('*/api/contexto', async ({ request }) => {
+        const cuerpo = (await request.json()) as { respuestas: Record<string, unknown> }
+        await espera
+        return HttpResponse.json({
+          version: 1,
+          estado: 'completo',
+          preguntas: PREGUNTAS_MOCK,
+          respuestas: cuerpo.respuestas,
+        })
+      }),
+    )
+    const { onTerminar } = montar()
+    await contestarHastaLaUltima()
+    await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
+    expect(await screen.findByRole('status', { name: 'Guardando tus respuestas' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Terminar' })).toBeNull()
+    soltar()
+    await waitFor(() => expect(onTerminar).toHaveBeenCalledWith('completo'))
   })
 
   it('al recargar a mitad no pierde lo escrito ni el paso', async () => {
@@ -226,7 +268,7 @@ describe('Cuestionario', () => {
     )
     montar()
     expect(await titulo('¿Cuál es tu ticket promedio?')).toBeInTheDocument()
-    expect(screen.getByText('Pregunta 1 de 1 · hace falta para empezar')).toBeInTheDocument()
+    expect(screen.getByText('Pregunta 1 de 1')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Terminar' })).toBeInTheDocument()
   })
 

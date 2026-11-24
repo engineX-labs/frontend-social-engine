@@ -17,12 +17,12 @@ import {
 } from '@/domain/contexto'
 import { borrarBorrador, guardarBorrador, leerBorrador } from './borrador'
 import { CampoPregunta } from './CampoPregunta'
+import { PantallaGuardando } from './PantallaGuardando'
 
 export type ResultadoCuestionario = 'completo' | 'salteado'
 
 /**
- * El cuestionario por pasos: una pregunta por pantalla, las obligatorias primero y el resto
- * salteable. Se dibuja entero desde el catálogo que manda el backend. `onTerminar` se llama una vez
+ * El cuestionario por pasos: una pregunta por pantalla, todas obligatorias (no se saltea nada). Se dibuja entero desde el catálogo que manda el backend. `onTerminar` se llama una vez
  * guardado (con el estado que quedó). El borrador sobrevive a una recarga (ver `borrador.ts`).
  */
 export function Cuestionario({
@@ -61,8 +61,12 @@ function Pasos({
   contexto: Contexto
   onTerminar: (estado: ResultadoCuestionario) => void
 }) {
-  const preguntas = useMemo(() => ordenarPreguntas(contexto.preguntas), [contexto.preguntas])
-  const nObligatorias = preguntas.filter((p) => p.obligatoria).length
+  // Todas son obligatorias acá (aunque el catálogo marque algunas como opcionales): la información
+  // es útil. Se conserva el orden de siempre, las que el catálogo pide primero van antes.
+  const preguntas = useMemo(
+    () => ordenarPreguntas(contexto.preguntas).map((p) => ({ ...p, obligatoria: true })),
+    [contexto.preguntas],
+  )
   const guardar = useGuardarContexto()
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
 
@@ -78,7 +82,7 @@ function Pasos({
     defaultValues: inicio.valores,
     resolver: zodResolver(esquemaDeRespuestas(preguntas)) as Resolver<ValoresRespuestas>,
   })
-  const { control, trigger, getValues, setValue, setError, watch } = form
+  const { control, trigger, getValues, setError, watch } = form
 
   useEffect(() => {
     const guardarTodo = () =>
@@ -100,12 +104,11 @@ function Pasos({
   const ultimo = paso === preguntas.length - 1
   if (!actual) return null
 
-  async function enviar(saltear: boolean) {
+  async function enviar() {
     setErrorGeneral(null)
     try {
       const guardado = await guardar.mutateAsync({
         respuestas: respuestasParaEnviar(getValues()),
-        ...(saltear ? { saltear: true } : {}),
       })
       borrarBorrador()
       onTerminar(guardado.estado === 'salteado' ? 'salteado' : 'completo')
@@ -123,17 +126,12 @@ function Pasos({
 
   async function siguiente() {
     if (!(await trigger(actual!.id))) return
-    if (ultimo) await enviar(false)
-    else setPaso(paso + 1)
-  }
-
-  async function saltearEsta() {
-    setValue(actual!.id, actual!.tipo === 'multiple' ? [] : '')
-    if (ultimo) await enviar(false)
+    if (ultimo) await enviar()
     else setPaso(paso + 1)
   }
 
   const guardando = guardar.isPending
+  if (guardando) return <PantallaGuardando />
   return (
     <form
       noValidate
@@ -146,7 +144,6 @@ function Pasos({
       <div className="grid gap-2">
         <p aria-live="polite" className="m-0 text-sm font-semibold text-muted">
           Pregunta {paso + 1} de {preguntas.length}
-          {paso < nObligatorias && ' · hace falta para empezar'}
         </p>
         <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-line">
           <div
@@ -162,6 +159,7 @@ function Pasos({
         control={control}
         nivel="h2"
         tituloRef={tituloRef}
+        sinRotulo
       />
 
       {errorGeneral && <EstadoError mensaje={errorGeneral} />}
@@ -175,18 +173,8 @@ function Pasos({
           Atrás
         </Boton>
         <span className="flex-1" />
-        {!actual.obligatoria && (
-          <Boton variante="fantasma" disabled={guardando} onClick={() => void saltearEsta()}>
-            Saltear
-          </Boton>
-        )}
-        {paso >= nObligatorias && !ultimo && (
-          <Boton variante="secundario" disabled={guardando} onClick={() => void enviar(true)}>
-            Saltear el resto
-          </Boton>
-        )}
         <Boton type="submit" variante="primario" disabled={guardando}>
-          {guardando ? 'Guardando…' : ultimo ? 'Terminar' : 'Siguiente'}
+          {ultimo ? 'Terminar' : 'Siguiente'}
         </Boton>
       </div>
     </form>

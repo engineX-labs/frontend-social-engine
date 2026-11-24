@@ -10,10 +10,12 @@ interface Props {
   /** `h2` para una pregunta por pantalla, `h3` dentro de un formulario con todas. */
   nivel?: 'h2' | 'h3'
   tituloRef?: Ref<HTMLHeadingElement>
+  /** Oculta el rótulo «Obligatoria» / «Opcional» (en el cuestionario todas son obligatorias). */
+  sinRotulo?: boolean
 }
 
 /** Una pregunta del catálogo, dibujada según su tipo. El error (del esquema o del servidor) va debajo. */
-export function CampoPregunta({ pregunta, control, nivel = 'h3', tituloRef }: Props) {
+export function CampoPregunta({ pregunta, control, nivel = 'h3', tituloRef, sinRotulo }: Props) {
   const id = useId()
   const { field, fieldState } = useController({ name: pregunta.id, control })
   const Titulo = nivel
@@ -21,7 +23,7 @@ export function CampoPregunta({ pregunta, control, nivel = 'h3', tituloRef }: Pr
   const idTitulo = `${id}-titulo`
   const idError = `${id}-error`
   const idAyuda = `${id}-ayuda`
-  const describedBy = [error ? idError : null, idAyuda].filter(Boolean).join(' ')
+  const describedBy = [error ? idError : null, sinRotulo ? null : idAyuda].filter(Boolean).join(' ')
 
   return (
     <div className="grid gap-3">
@@ -34,9 +36,11 @@ export function CampoPregunta({ pregunta, control, nivel = 'h3', tituloRef }: Pr
         >
           {pregunta.texto}
         </Titulo>
-        <span id={idAyuda} className="text-xs font-semibold text-muted">
-          {pregunta.obligatoria ? 'Obligatoria' : 'Opcional'}
-        </span>
+        {!sinRotulo && (
+          <span id={idAyuda} className="text-xs font-semibold text-muted">
+            {pregunta.obligatoria ? 'Obligatoria' : 'Opcional'}
+          </span>
+        )}
       </div>
 
       {pregunta.tipo === 'texto' && (
