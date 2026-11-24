@@ -21,7 +21,7 @@ Frontend de **social engine** (engineX): calendario de publicaciones e ideas y c
 - Formato: `npm run format:check` / `npm run format`
 - Build: `npm run build` (`tsc -b && vite build`)
 
-## Stack (Notion: "Stack social engine")
+## Stack (decisión 0004 en `social-engine/decisiones/`)
 
 Vite + React + TypeScript (estricto), Tailwind v4 + shadcn/ui (`components.json`, alias `@/`), TanStack Router/Query, openapi-typescript + openapi-fetch, Clerk (`@clerk/react`, login), React Hook Form + Zod, Vitest + Testing Library, MSW para mock. Backend aparte (Python + FastAPI, Nahuel). Instalados hoy: Tailwind, TanStack Router/Query, MSW, Vitest/Testing Library, clsx/tailwind-merge/cva/lucide. React Hook Form + Zod (con `@hookform/resolvers`) se usan en la bienvenida (`features/registro/Bienvenida.tsx`) y en los formularios del cuestionario y del perfil (`features/contexto/`). Pendientes (se suman cuando se usen): openapi-typescript/openapi-fetch (cuando exista el esquema).
 
