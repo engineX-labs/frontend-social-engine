@@ -102,6 +102,26 @@
   color-scheme: dark;
 }
 
+/* Logo de Fidel (AvatarFidel): muestra la versión oscura o la clara según el tema.
+   Sin data-theme manda el sistema (como los tokens de arriba). */
+.fidel-logo .fidel-logo-claro {
+  display: none;
+}
+:root[data-theme='light'] .fidel-logo .fidel-logo-claro {
+  display: inline;
+}
+:root[data-theme='light'] .fidel-logo .fidel-logo-oscuro {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .fidel-logo .fidel-logo-claro {
+    display: inline;
+  }
+  :root:not([data-theme='dark']) .fidel-logo .fidel-logo-oscuro {
+    display: none;
+  }
+}
+
 @theme inline {
   --color-surface: var(--surface);
   --color-raised: var(--surface-raised);
