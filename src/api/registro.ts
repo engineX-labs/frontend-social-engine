@@ -39,6 +39,11 @@ export interface ResultadoSincronizar {
   redes: RedDeConexion[]
 }
 
+export interface ResultadoCuenta {
+  estado: EstadoComercio
+  redes: RedDeConexion[]
+}
+
 export const yoQuery = () =>
   queryOptions({
     queryKey: ['yo'],
@@ -85,6 +90,22 @@ export function useSincronizarRedes() {
   return useMutation({
     mutationFn: () =>
       apiFetch<ResultadoSincronizar>('/api/conexion/redes/sincronizar', { method: 'POST' }),
+    onSuccess: () => {
+      void consultas.invalidateQueries({ queryKey: ['conexion'] })
+      void consultas.invalidateQueries({ queryKey: ['yo'] })
+    },
+  })
+}
+
+/**
+ * `POST /api/conexion/cuenta` (alta de prueba, decisión 0007): la key de Zernio del comercio. Valida, guarda
+ * cifrada y registra las redes. La key nunca se guarda en el front: solo viaja en este pedido.
+ */
+export function useCargarCuenta() {
+  const consultas = useQueryClient()
+  return useMutation({
+    mutationFn: (apiKey: string) =>
+      apiFetch<ResultadoCuenta>('/api/conexion/cuenta', { method: 'POST', json: { apiKey } }),
     onSuccess: () => {
       void consultas.invalidateQueries({ queryKey: ['conexion'] })
       void consultas.invalidateQueries({ queryKey: ['yo'] })

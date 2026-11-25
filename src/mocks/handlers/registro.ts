@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import {
   ErrorRegistroMock,
+  cargarCuentaPropia,
   crearComercio,
   iniciarConexion,
   redesDeConexion,
@@ -25,6 +26,12 @@ export const registroHandlers = [
       const cuerpo = (await request.json().catch(() => ({}))) as { nombre?: unknown }
       const { comercio, estado } = crearComercio(cuerpo)
       return HttpResponse.json(comercio, { status: estado })
+    }),
+  ),
+  http.post('*/api/conexion/cuenta', ({ request }) =>
+    responder(async () => {
+      const cuerpo = (await request.json().catch(() => ({}))) as { apiKey?: unknown }
+      return HttpResponse.json(cargarCuentaPropia(cuerpo))
     }),
   ),
   http.get('*/api/conexion/redes', () => responder(() => HttpResponse.json(redesDeConexion()))),

@@ -164,6 +164,28 @@ export function sincronizar(): { nuevas: number; redes: RedDeConexion[] } {
   return { nuevas, redes: estado.redes }
 }
 
+/**
+ * Alta de prueba: el comercio pega su key. Mismos códigos y mensajes que el backend; el «Zernio» del mock
+ * rechaza una key que empieza con `mala` y devuelve el Instagram de la demo con cualquier otra.
+ */
+export function cargarCuentaPropia(cuerpo: { apiKey?: unknown }): {
+  estado: EstadoComercio
+  redes: RedDeConexion[]
+} {
+  exigirComercio()
+  const apiKey = typeof cuerpo.apiKey === 'string' ? cuerpo.apiKey.trim() : ''
+  if (apiKey.length < 8 || apiKey.length > 200) throw new ErrorRegistroMock(422, 'Pedido inválido')
+  if (estado.cuentaLista)
+    throw new ErrorRegistroMock(409, 'Tu comercio ya tiene una cuenta de Zernio')
+  if (apiKey.startsWith('mala'))
+    throw new ErrorRegistroMock(400, 'Esa key de Zernio no es válida. Revisala y probá de nuevo')
+  if (apiKey.startsWith('ajena'))
+    throw new ErrorRegistroMock(409, 'Esa cuenta de Zernio ya está en uso en otro comercio')
+  estado.cuentaLista = true
+  estado.redes = structuredClone(REDES_DEMO)
+  return { estado: estadoDelComercio(), redes: estado.redes }
+}
+
 /** Para los tests: una red que Zernio dejó con el permiso vencido. */
 export function marcarParaReconectar(plataforma: Red) {
   const red = estado.redes.find((r) => r.plataforma === plataforma)
