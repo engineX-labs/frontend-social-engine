@@ -8,8 +8,9 @@ const TAMANOS = {
 } as const
 
 /**
- * Cara de Fidel, el agente. El gradiente de marca se reserva para él:
- * donde aparece, lo que sigue lo dijo o lo sugirió Fidel.
+ * Logo de Fidel, el agente. Dos versiones (oscura y clara): la que se ve la
+ * decide el tema (`data-theme`, o el sistema si no hay uno elegido), ver
+ * `.fidel-logo` en `index.css`. Donde aparece, lo que sigue lo dijo o lo sugirió Fidel.
  */
 export function AvatarFidel({
   tamano = 'md',
@@ -25,15 +26,14 @@ export function AvatarFidel({
     <span
       aria-hidden="true"
       className={cn(
-        'fidel-gradiente grid shrink-0 place-items-center rounded-full text-white shadow-[inset_0_1px_0_#ffffff59,inset_0_-6px_10px_-6px_#00000059]',
+        'fidel-logo grid shrink-0 place-items-center',
         pensando && 'animate-latido motion-reduce:animate-none',
         TAMANOS[tamano],
         className,
       )}
     >
-      <svg viewBox="0 0 24 24" className="size-[58%]" fill="currentColor">
-        <path d="M12 2c.6 6 4 9.4 10 10-6 .6-9.4 4-10 10-.6-6-4-9.4-10-10 6-.6 9.4-4 10-10Z" />
-      </svg>
+      <img src="/fidel/fidel-avatar-dark.svg" alt="" className="fidel-logo-oscuro size-full" />
+      <img src="/fidel/fidel-avatar-light.svg" alt="" className="fidel-logo-claro size-full" />
     </span>
   )
 }
